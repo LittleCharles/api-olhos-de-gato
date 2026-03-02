@@ -3,10 +3,7 @@ import "./shared/container/index.js";
 import { buildServer } from "./infrastructure/http/server.js";
 import { startMarketplaceJobs } from "./infrastructure/jobs/MarketplaceJobs.js";
 
-console.log("=== main.ts loaded ===");
-
 async function main() {
-  console.log("=== main() starting ===");
   const app = await buildServer();
 
   const port = Number(process.env.PORT) || 3333;
