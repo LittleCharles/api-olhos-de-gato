@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import "./shared/container/index.js";
 import { buildServer } from "./infrastructure/http/server.js";
+import { startMarketplaceJobs } from "./infrastructure/jobs/MarketplaceJobs.js";
 
 async function main() {
   const app = await buildServer();
@@ -12,6 +13,8 @@ async function main() {
     await app.listen({ port, host });
     console.log(`🚀 Server running on http://localhost:${port}`);
     console.log(`📚 Health check: http://localhost:${port}/health`);
+
+    startMarketplaceJobs();
   } catch (error) {
     console.error("Error starting server:", error);
     process.exit(1);

@@ -44,6 +44,12 @@ import { PrismaFavoriteRepository } from "../../infrastructure/database/reposito
 import { ISupportTicketRepository } from "../../domain/repositories/ISupportTicketRepository.js";
 import { PrismaSupportTicketRepository } from "../../infrastructure/database/repositories/PrismaSupportTicketRepository.js";
 
+import { IMarketplaceAccountRepository } from "../../domain/repositories/IMarketplaceAccountRepository.js";
+import { PrismaMarketplaceAccountRepository } from "../../infrastructure/database/repositories/PrismaMarketplaceAccountRepository.js";
+
+import { IMarketplaceListingRepository } from "../../domain/repositories/IMarketplaceListingRepository.js";
+import { PrismaMarketplaceListingRepository } from "../../infrastructure/database/repositories/PrismaMarketplaceListingRepository.js";
+
 // Providers
 import { IHashProvider } from "../../application/interfaces/IHashProvider.js";
 import { BcryptHashProvider } from "../../infrastructure/providers/hash/BcryptHashProvider.js";
@@ -110,6 +116,14 @@ container.registerSingleton<IFavoriteRepository>(
 container.registerSingleton<ISupportTicketRepository>(
   "SupportTicketRepository",
   PrismaSupportTicketRepository,
+);
+container.registerSingleton<IMarketplaceAccountRepository>(
+  "MarketplaceAccountRepository",
+  PrismaMarketplaceAccountRepository,
+);
+container.registerSingleton<IMarketplaceListingRepository>(
+  "MarketplaceListingRepository",
+  PrismaMarketplaceListingRepository,
 );
 
 // Register Providers

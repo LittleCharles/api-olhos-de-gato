@@ -10,6 +10,7 @@ import { SettingsController } from "../controllers/SettingsController.js";
 import { AbandonedCartController } from "../controllers/AbandonedCartController.js";
 import { ProductImageController } from "../controllers/ProductImageController.js";
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
+import { MarketplaceController } from "../controllers/MarketplaceController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -24,6 +25,7 @@ const settingsController = new SettingsController();
 const abandonedCartController = new AbandonedCartController();
 const productImageController = new ProductImageController();
 const supportTicketController = new SupportTicketController();
+const marketplaceController = new MarketplaceController();
 
 export async function adminRoutes(app: FastifyInstance) {
   // Protege todas as rotas admin
@@ -88,4 +90,22 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/tickets/:id", supportTicketController.get);
   app.patch("/tickets/:id/status", supportTicketController.updateStatus);
   app.post("/tickets/:id/replies", supportTicketController.reply);
+
+  // Marketplace Accounts (4 endpoints)
+  app.get("/marketplace/accounts", marketplaceController.listAccounts);
+  app.get("/marketplace/accounts/:platform/auth-url", marketplaceController.getAuthUrl);
+  app.post("/marketplace/accounts/:platform/callback", marketplaceController.oauthCallback);
+  app.delete("/marketplace/accounts/:platform", marketplaceController.disconnect);
+
+  // Marketplace Listings (6 endpoints)
+  app.get("/marketplace/listings", marketplaceController.listListings);
+  app.post("/marketplace/listings", marketplaceController.createListing);
+  app.put("/marketplace/listings/:id", marketplaceController.updateListing);
+  app.patch("/marketplace/listings/:id/publish", marketplaceController.publishListing);
+  app.patch("/marketplace/listings/:id/pause", marketplaceController.pauseListing);
+  app.delete("/marketplace/listings/:id", marketplaceController.deleteListing);
+
+  // Marketplace Sync & Categories (2 endpoints)
+  app.post("/marketplace/sync/stock", marketplaceController.syncStock);
+  app.get("/marketplace/categories/:platform", marketplaceController.getCategories);
 }

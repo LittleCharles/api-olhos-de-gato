@@ -63,6 +63,20 @@ enum TicketStatus {
   CLOSED
 }
 
+enum MarketplacePlatform {
+  MERCADO_LIVRE
+  SHOPEE
+  AMAZON
+}
+
+enum MarketplaceListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ERROR
+  CLOSED
+}
+
 // ==================== MODELS ====================
 
 model User {
@@ -172,14 +186,15 @@ model Product {
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  category       Category?             @relation(fields: [categoryId], references: [id])
-  subcategory    Subcategory?          @relation(fields: [subcategoryId], references: [id])
-  images         ProductImage[]
-  specifications ProductSpecification[]
-  reviews        Review[]
-  favorites      Favorite[]
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
+  category            Category?             @relation(fields: [categoryId], references: [id])
+  subcategory         Subcategory?          @relation(fields: [subcategoryId], references: [id])
+  images              ProductImage[]
+  specifications      ProductSpecification[]
+  reviews             Review[]
+  favorites           Favorite[]
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  marketplaceListings MarketplaceListing[]
 
   @@index([categoryId])
   @@index([subcategoryId])
@@ -309,11 +324,13 @@ model Order {
   subtotal       Decimal       @db.Decimal(10, 2)
   discount       Decimal       @default(0) @db.Decimal(10, 2)
   total          Decimal       @db.Decimal(10, 2)
-  notes          String?
-  trackingCode   String?       @map("tracking_code")
-  pickupLocation String?       @map("pickup_location")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  notes           String?
+  trackingCode    String?       @map("tracking_code")
+  pickupLocation  String?       @map("pickup_location")
+  source          String        @default("DIRECT")
+  externalOrderId String?       @map("external_order_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // Relations
   customer       Customer             @relation(fields: [customerId], references: [id])
@@ -389,4 +406,49 @@ model TicketReply {
   ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@map("ticket_replies")
+}
+
+// ==================== MARKETPLACE ====================
+
+model MarketplaceAccount {
+  id             String              @id @default(uuid())
+  platform       MarketplacePlatform @unique
+  sellerId       String?             @map("seller_id")
+  accessToken    String?             @map("access_token")
+  refreshToken   String?             @map("refresh_token")
+  tokenExpiresAt DateTime?           @map("token_expires_at")
+  isActive       Boolean             @default(false) @map("is_active")
+  metadata       Json?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  listings MarketplaceListing[]
+
+  @@map("marketplace_accounts")
+}
+
+model MarketplaceListing {
+  id              String                   @id @default(uuid())
+  accountId       String                   @map("account_id")
+  productId       String                   @map("product_id")
+  externalId      String?                  @map("external_id")
+  externalUrl     String?                  @map("external_url")
+  price           Decimal                  @db.Decimal(10, 2)
+  status          MarketplaceListingStatus @default(DRAFT)
+  lastSyncAt      DateTime?                @map("last_sync_at")
+  lastError       String?                  @map("last_error")
+  categoryMapping String?                  @map("category_mapping")
+  metadata        Json?
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  // Relations
+  account MarketplaceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, productId])
+  @@index([productId])
+  @@index([status])
+  @@map("marketplace_listings")
 }

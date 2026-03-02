@@ -51,3 +51,17 @@ export enum TicketStatus {
   RESOLVED = "RESOLVED",
   CLOSED = "CLOSED",
 }
+
+export enum MarketplacePlatform {
+  MERCADO_LIVRE = "MERCADO_LIVRE",
+  SHOPEE = "SHOPEE",
+  AMAZON = "AMAZON",
+}
+
+export enum MarketplaceListingStatus {
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
+  PAUSED = "PAUSED",
+  ERROR = "ERROR",
+  CLOSED = "CLOSED",
+}
