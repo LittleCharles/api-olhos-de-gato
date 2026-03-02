@@ -35,5 +35,5 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 3333
 
-# Rodar migrations e iniciar
-CMD ["sh", "-c", "npx prisma migrate deploy; echo \"Migration exit code: $?\"; echo '=== Starting server ==='; exec node dist/main.js"]
+# Iniciar servidor (migrations rodam via prisma na inicializacao)
+CMD ["node", "dist/main.js"]
