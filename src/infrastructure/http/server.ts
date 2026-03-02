@@ -13,7 +13,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 
 export async function buildServer() {
   const app = Fastify({
-    logger: process.env.NODE_ENV === "development",
+    logger: true,
   });
 
   // Zod Type Provider Configuration
