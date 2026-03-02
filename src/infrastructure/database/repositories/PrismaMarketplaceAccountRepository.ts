@@ -2,6 +2,7 @@ import { prisma } from "../prisma/client.js";
 import { IMarketplaceAccountRepository } from "../../../domain/repositories/IMarketplaceAccountRepository.js";
 import { MarketplaceAccount } from "../../../domain/entities/MarketplaceAccount.js";
 import { MarketplacePlatform } from "../../../domain/enums/index.js";
+import { Prisma } from "@prisma/client";
 
 export class PrismaMarketplaceAccountRepository implements IMarketplaceAccountRepository {
   async findById(id: string): Promise<MarketplaceAccount | null> {
@@ -41,7 +42,7 @@ export class PrismaMarketplaceAccountRepository implements IMarketplaceAccountRe
         refreshToken: account.refreshToken,
         tokenExpiresAt: account.tokenExpiresAt,
         isActive: account.isActive,
-        metadata: account.metadata ?? undefined,
+        metadata: (account.metadata as Prisma.InputJsonValue) ?? undefined,
       },
     });
     return this.mapToEntity(created);
@@ -56,7 +57,7 @@ export class PrismaMarketplaceAccountRepository implements IMarketplaceAccountRe
         refreshToken: account.refreshToken,
         tokenExpiresAt: account.tokenExpiresAt,
         isActive: account.isActive,
-        metadata: account.metadata ?? undefined,
+        metadata: (account.metadata as Prisma.InputJsonValue) ?? undefined,
       },
     });
     return this.mapToEntity(updated);

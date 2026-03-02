@@ -100,7 +100,7 @@ export class PrismaMarketplaceListingRepository implements IMarketplaceListingRe
         lastSyncAt: listing.lastSyncAt,
         lastError: listing.lastError,
         categoryMapping: listing.categoryMapping,
-        metadata: listing.metadata ?? undefined,
+        metadata: (listing.metadata as Prisma.InputJsonValue) ?? undefined,
       },
     });
     return this.mapToEntity(created);
@@ -117,7 +117,7 @@ export class PrismaMarketplaceListingRepository implements IMarketplaceListingRe
         lastSyncAt: listing.lastSyncAt,
         lastError: listing.lastError,
         categoryMapping: listing.categoryMapping,
-        metadata: listing.metadata ?? undefined,
+        metadata: (listing.metadata as Prisma.InputJsonValue) ?? undefined,
       },
     });
     return this.mapToEntity(updated);
