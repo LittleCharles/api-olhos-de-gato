@@ -29,6 +29,7 @@ export async function buildServer() {
         version: "1.0.0",
       },
       servers: [
+        { url: "https://api.olhosdegato.com.br", description: "Produção" },
         { url: "http://localhost:3333", description: "Desenvolvimento" },
       ],
       components: {
