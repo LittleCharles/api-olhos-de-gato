@@ -55,7 +55,11 @@ export async function buildServer() {
 
   // Plugins
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN || true,
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN === "true"
+        ? true
+        : process.env.CORS_ORIGIN.split(",").map(s => s.trim())
+      : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
