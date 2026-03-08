@@ -14,6 +14,15 @@ export const CreateProductSchema = z.object({
   sku: z.string().min(1).max(50),
   isFeatured: z.boolean().default(false),
   isRecommended: z.boolean().default(false),
+  brandId: z.string().uuid().nullable().optional(),
+  ean: z.string().regex(/^\d{8,13}$/, "EAN deve ter 8 a 13 digitos").nullable().optional(),
+  weight: z.number().positive().nullable().optional(),
+  lengthCm: z.number().positive().nullable().optional(),
+  widthCm: z.number().positive().nullable().optional(),
+  heightCm: z.number().positive().nullable().optional(),
+  countryOrigin: z.string().max(100).nullable().optional(),
+  manufacturer: z.string().max(200).nullable().optional(),
+  bulletPoints: z.array(z.string().max(200)).max(5).optional(),
 });
 
 export const UpdateProductSchema = z.object({
@@ -24,11 +33,20 @@ export const UpdateProductSchema = z.object({
   stock: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
   animalType: z.nativeEnum(AnimalType).optional(),
-  subcategoryId: z.string().min(1).optional(),
+  subcategoryId: z.string().min(1).nullable().optional(),
   promoPrice: z.number().positive().nullable().optional(),
   sku: z.string().min(1).max(50).optional(),
   isFeatured: z.boolean().optional(),
   isRecommended: z.boolean().optional(),
+  brandId: z.string().uuid().nullable().optional(),
+  ean: z.string().regex(/^\d{8,13}$/, "EAN deve ter 8 a 13 digitos").nullable().optional(),
+  weight: z.number().positive().nullable().optional(),
+  lengthCm: z.number().positive().nullable().optional(),
+  widthCm: z.number().positive().nullable().optional(),
+  heightCm: z.number().positive().nullable().optional(),
+  countryOrigin: z.string().max(100).nullable().optional(),
+  manufacturer: z.string().max(200).nullable().optional(),
+  bulletPoints: z.array(z.string().max(200)).max(5).optional(),
 });
 
 // z.coerce.boolean() usa Boolean("false") = true, entao precisamos de coercao customizada

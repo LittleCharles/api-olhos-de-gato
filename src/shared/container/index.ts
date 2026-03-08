@@ -50,6 +50,9 @@ import { PrismaMarketplaceAccountRepository } from "../../infrastructure/databas
 import { IMarketplaceListingRepository } from "../../domain/repositories/IMarketplaceListingRepository.js";
 import { PrismaMarketplaceListingRepository } from "../../infrastructure/database/repositories/PrismaMarketplaceListingRepository.js";
 
+import { IBrandRepository } from "../../domain/repositories/IBrandRepository.js";
+import { PrismaBrandRepository } from "../../infrastructure/database/repositories/PrismaBrandRepository.js";
+
 // Providers
 import { IHashProvider } from "../../application/interfaces/IHashProvider.js";
 import { BcryptHashProvider } from "../../infrastructure/providers/hash/BcryptHashProvider.js";
@@ -124,6 +127,10 @@ container.registerSingleton<IMarketplaceAccountRepository>(
 container.registerSingleton<IMarketplaceListingRepository>(
   "MarketplaceListingRepository",
   PrismaMarketplaceListingRepository,
+);
+container.registerSingleton<IBrandRepository>(
+  "BrandRepository",
+  PrismaBrandRepository,
 );
 
 // Register Providers

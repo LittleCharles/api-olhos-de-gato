@@ -167,6 +167,18 @@ model Subcategory {
   @@map("subcategories")
 }
 
+model Brand {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  products Product[]
+
+  @@map("brands")
+}
+
 model Product {
   id              String     @id @default(uuid())
   categoryId      String?    @map("category_id")
@@ -182,12 +194,22 @@ model Product {
   isActive        Boolean    @default(true) @map("is_active")
   isFeatured      Boolean    @default(false) @map("is_featured")
   isRecommended   Boolean    @default(false) @map("is_recommended")
+  brandId         String?    @map("brand_id")
+  ean             String?
+  weight          Decimal?   @db.Decimal(10, 3)
+  lengthCm        Decimal?   @map("length_cm") @db.Decimal(10, 2)
+  widthCm         Decimal?   @map("width_cm") @db.Decimal(10, 2)
+  heightCm        Decimal?   @map("height_cm") @db.Decimal(10, 2)
+  countryOrigin   String?    @map("country_origin")
+  manufacturer    String?
+  bulletPoints    String[]   @default([]) @map("bullet_points")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   // Relations
   category            Category?             @relation(fields: [categoryId], references: [id])
   subcategory         Subcategory?          @relation(fields: [subcategoryId], references: [id])
+  brand               Brand?                @relation(fields: [brandId], references: [id])
   images              ProductImage[]
   specifications      ProductSpecification[]
   reviews             Review[]
@@ -200,6 +222,7 @@ model Product {
   @@index([subcategoryId])
   @@index([animalType])
   @@index([slug])
+  @@index([brandId])
   @@map("products")
 }
 

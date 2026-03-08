@@ -14,10 +14,12 @@ import { AnimalType } from "../../../domain/enums/index.js";
 import { Prisma } from "@prisma/client";
 
 export class PrismaProductRepository implements IProductRepository {
+  private readonly includeRelations = { images: true, brand: true } as const;
+
   async findById(id: string): Promise<Product | null> {
     const product = await prisma.product.findUnique({
       where: { id },
-      include: { images: true },
+      include: this.includeRelations,
     });
     if (!product) return null;
     return this.mapToEntity(product);
@@ -26,7 +28,7 @@ export class PrismaProductRepository implements IProductRepository {
   async findBySlug(slug: string): Promise<Product | null> {
     const product = await prisma.product.findUnique({
       where: { slug },
-      include: { images: true },
+      include: this.includeRelations,
     });
     if (!product) return null;
     return this.mapToEntity(product);
@@ -92,7 +94,7 @@ export class PrismaProductRepository implements IProductRepository {
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: { images: true },
+        include: this.includeRelations,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -112,7 +114,7 @@ export class PrismaProductRepository implements IProductRepository {
   async findByCategory(categoryId: string): Promise<Product[]> {
     const products = await prisma.product.findMany({
       where: { categoryId, isActive: true },
-      include: { images: true },
+      include: this.includeRelations,
     });
     return products.map((p) => this.mapToEntity(p));
   }
@@ -134,8 +136,17 @@ export class PrismaProductRepository implements IProductRepository {
         sku: product.sku,
         isFeatured: product.isFeatured,
         isRecommended: product.isRecommended,
+        brandId: product.brandId,
+        ean: product.ean,
+        weight: product.weight,
+        lengthCm: product.lengthCm,
+        widthCm: product.widthCm,
+        heightCm: product.heightCm,
+        countryOrigin: product.countryOrigin,
+        manufacturer: product.manufacturer,
+        bulletPoints: product.bulletPoints,
       },
-      include: { images: true },
+      include: this.includeRelations,
     });
     return this.mapToEntity(created);
   }
@@ -157,8 +168,17 @@ export class PrismaProductRepository implements IProductRepository {
         sku: product.sku,
         isFeatured: product.isFeatured,
         isRecommended: product.isRecommended,
+        brandId: product.brandId,
+        ean: product.ean,
+        weight: product.weight,
+        lengthCm: product.lengthCm,
+        widthCm: product.widthCm,
+        heightCm: product.heightCm,
+        countryOrigin: product.countryOrigin,
+        manufacturer: product.manufacturer,
+        bulletPoints: product.bulletPoints,
       },
-      include: { images: true },
+      include: this.includeRelations,
     });
     return this.mapToEntity(updated);
   }
@@ -177,7 +197,7 @@ export class PrismaProductRepository implements IProductRepository {
   async findFeatured(limit?: number): Promise<Product[]> {
     const products = await prisma.product.findMany({
       where: { isFeatured: true, isActive: true },
-      include: { images: true },
+      include: this.includeRelations,
       orderBy: { name: "asc" },
       take: limit ?? 10,
     });
@@ -187,7 +207,7 @@ export class PrismaProductRepository implements IProductRepository {
   async findRecommended(limit?: number): Promise<Product[]> {
     const products = await prisma.product.findMany({
       where: { isRecommended: true, isActive: true },
-      include: { images: true },
+      include: this.includeRelations,
       orderBy: { name: "asc" },
       take: limit ?? 10,
     });
@@ -259,6 +279,16 @@ export class PrismaProductRepository implements IProductRepository {
       sku: data.sku,
       isFeatured: data.isFeatured,
       isRecommended: data.isRecommended,
+      brandId: data.brandId ?? null,
+      brandName: data.brand?.name ?? null,
+      ean: data.ean ?? null,
+      weight: data.weight != null ? Number(data.weight) : null,
+      lengthCm: data.lengthCm != null ? Number(data.lengthCm) : null,
+      widthCm: data.widthCm != null ? Number(data.widthCm) : null,
+      heightCm: data.heightCm != null ? Number(data.heightCm) : null,
+      countryOrigin: data.countryOrigin ?? null,
+      manufacturer: data.manufacturer ?? null,
+      bulletPoints: data.bulletPoints ?? [],
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });

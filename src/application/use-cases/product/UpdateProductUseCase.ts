@@ -47,6 +47,15 @@ export class UpdateProductUseCase {
       sku: data.sku,
       isFeatured: data.isFeatured,
       isRecommended: data.isRecommended,
+      brandId: data.brandId,
+      ean: data.ean,
+      weight: data.weight,
+      lengthCm: data.lengthCm,
+      widthCm: data.widthCm,
+      heightCm: data.heightCm,
+      countryOrigin: data.countryOrigin,
+      manufacturer: data.manufacturer,
+      bulletPoints: data.bulletPoints,
     });
 
     return this.productRepository.update(product);

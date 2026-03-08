@@ -11,6 +11,7 @@ import { AbandonedCartController } from "../controllers/AbandonedCartController.
 import { ProductImageController } from "../controllers/ProductImageController.js";
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
 import { MarketplaceController } from "../controllers/MarketplaceController.js";
+import { BrandController } from "../controllers/BrandController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -26,6 +27,7 @@ const abandonedCartController = new AbandonedCartController();
 const productImageController = new ProductImageController();
 const supportTicketController = new SupportTicketController();
 const marketplaceController = new MarketplaceController();
+const brandController = new BrandController();
 
 export async function adminRoutes(app: FastifyInstance) {
   // Protege todas as rotas admin
@@ -44,6 +46,12 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/products/:id/images", productImageController.upload);
   app.delete("/products/:id/images/:imageId", productImageController.delete);
   app.patch("/products/:id/images/:imageId/main", productImageController.setMain);
+
+  // Brands (4 endpoints)
+  app.get("/brands", brandController.list);
+  app.post("/brands", brandController.create);
+  app.put("/brands/:id", brandController.update);
+  app.delete("/brands/:id", brandController.delete);
 
   // Categories / Subcategories (4 endpoints)
   app.get("/categories", subcategoryController.list);

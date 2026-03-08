@@ -25,6 +25,16 @@ export interface ProductProps {
   sku: string;
   isFeatured: boolean;
   isRecommended: boolean;
+  brandId: string | null;
+  brandName?: string | null;
+  ean: string | null;
+  weight: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  countryOrigin: string | null;
+  manufacturer: string | null;
+  bulletPoints: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -108,6 +118,46 @@ export class Product {
     return this.props.isRecommended;
   }
 
+  get brandId(): string | null {
+    return this.props.brandId;
+  }
+
+  get brandName(): string | null {
+    return this.props.brandName ?? null;
+  }
+
+  get ean(): string | null {
+    return this.props.ean;
+  }
+
+  get weight(): number | null {
+    return this.props.weight;
+  }
+
+  get lengthCm(): number | null {
+    return this.props.lengthCm;
+  }
+
+  get widthCm(): number | null {
+    return this.props.widthCm;
+  }
+
+  get heightCm(): number | null {
+    return this.props.heightCm;
+  }
+
+  get countryOrigin(): string | null {
+    return this.props.countryOrigin;
+  }
+
+  get manufacturer(): string | null {
+    return this.props.manufacturer;
+  }
+
+  get bulletPoints(): string[] {
+    return this.props.bulletPoints;
+  }
+
   isAvailable(): boolean {
     return this.props.isActive && this.props.stock > 0;
   }
@@ -162,6 +212,15 @@ export class Product {
         | "sku"
         | "isFeatured"
         | "isRecommended"
+        | "brandId"
+        | "ean"
+        | "weight"
+        | "lengthCm"
+        | "widthCm"
+        | "heightCm"
+        | "countryOrigin"
+        | "manufacturer"
+        | "bulletPoints"
       >
     >,
   ): void {
@@ -180,6 +239,15 @@ export class Product {
     if (data.isFeatured !== undefined) this.props.isFeatured = data.isFeatured;
     if (data.isRecommended !== undefined)
       this.props.isRecommended = data.isRecommended;
+    if (data.brandId !== undefined) this.props.brandId = data.brandId;
+    if (data.ean !== undefined) this.props.ean = data.ean;
+    if (data.weight !== undefined) this.props.weight = data.weight;
+    if (data.lengthCm !== undefined) this.props.lengthCm = data.lengthCm;
+    if (data.widthCm !== undefined) this.props.widthCm = data.widthCm;
+    if (data.heightCm !== undefined) this.props.heightCm = data.heightCm;
+    if (data.countryOrigin !== undefined) this.props.countryOrigin = data.countryOrigin;
+    if (data.manufacturer !== undefined) this.props.manufacturer = data.manufacturer;
+    if (data.bulletPoints !== undefined) this.props.bulletPoints = data.bulletPoints;
     this.props.updatedAt = new Date();
   }
 
