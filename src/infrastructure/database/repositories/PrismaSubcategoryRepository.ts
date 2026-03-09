@@ -75,7 +75,7 @@ export class PrismaSubcategoryRepository implements ISubcategoryRepository {
   }
 
   async countProducts(id: string): Promise<number> {
-    return prisma.product.count({ where: { subcategoryId: id } });
+    return prisma.product.count({ where: { subcategories: { some: { id } } } });
   }
 
   private mapToEntity(data: any): Subcategory {

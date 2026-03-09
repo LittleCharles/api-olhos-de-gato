@@ -182,7 +182,6 @@ model Brand {
 model Product {
   id              String     @id @default(uuid())
   categoryId      String?    @map("category_id")
-  subcategoryId   String?    @map("subcategory_id")
   animalType      AnimalType @map("animal_type")
   name            String
   slug            String     @unique
@@ -208,7 +207,7 @@ model Product {
 
   // Relations
   category            Category?             @relation(fields: [categoryId], references: [id])
-  subcategory         Subcategory?          @relation(fields: [subcategoryId], references: [id])
+  subcategories       Subcategory[]
   brand               Brand?                @relation(fields: [brandId], references: [id])
   images              ProductImage[]
   specifications      ProductSpecification[]
@@ -219,7 +218,6 @@ model Product {
   marketplaceListings MarketplaceListing[]
 
   @@index([categoryId])
-  @@index([subcategoryId])
   @@index([animalType])
   @@index([slug])
   @@index([brandId])

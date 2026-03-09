@@ -43,7 +43,7 @@ export class UpdateProductUseCase {
       categoryId: data.categoryId,
       isActive: data.isActive,
       animalType: data.animalType,
-      subcategoryId: data.subcategoryId,
+      subcategoryIds: data.subcategoryIds,
       sku: data.sku,
       isFeatured: data.isFeatured,
       isRecommended: data.isRecommended,

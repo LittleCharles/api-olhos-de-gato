@@ -32,7 +32,7 @@ export class CreateProductUseCase {
       isActive: data.isActive ?? true,
       images: [],
       animalType: data.animalType,
-      subcategoryId: data.subcategoryId ?? null,
+      subcategoryIds: data.subcategoryIds ?? [],
       promoPrice: data.promoPrice ? Money.create(data.promoPrice) : null,
       sku: data.sku,
       isFeatured: data.isFeatured ?? false,

@@ -11,7 +11,7 @@ export class ProductPresenter {
       price: product.price.getValue(),
       priceFormatted: product.price.format(),
       animalType: product.animalType,
-      subcategoryId: product.subcategoryId,
+      subcategoryIds: product.subcategoryIds,
       promoPrice: product.promoPrice?.getValue() ?? null,
       promoPriceFormatted: product.promoPrice?.format() ?? null,
       sku: product.sku,

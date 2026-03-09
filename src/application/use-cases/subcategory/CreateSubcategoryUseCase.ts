@@ -14,7 +14,12 @@ export class CreateSubcategoryUseCase {
   async execute(data: CreateSubcategoryDTO): Promise<Subcategory> {
     const existing = await this.subcategoryRepository.findById(data.id);
     if (existing) {
-      throw new AppError("Já existe uma subcategoria com este ID", 409);
+      throw new AppError(
+        existing.animalType === data.animalType
+          ? "Já existe uma subcategoria com este nome para este animal"
+          : "Já existe uma subcategoria com este ID",
+        409,
+      );
     }
 
     const now = new Date();

@@ -14,7 +14,7 @@ import { AnimalType } from "../../../domain/enums/index.js";
 import { Prisma } from "@prisma/client";
 
 export class PrismaProductRepository implements IProductRepository {
-  private readonly includeRelations = { images: true, brand: true } as const;
+  private readonly includeRelations = { images: true, brand: true, subcategories: true } as const;
 
   async findById(id: string): Promise<Product | null> {
     const product = await prisma.product.findUnique({
@@ -76,7 +76,7 @@ export class PrismaProductRepository implements IProductRepository {
     }
 
     if (filters?.subcategoryId) {
-      where.subcategoryId = filters.subcategoryId;
+      where.subcategories = { some: { id: filters.subcategoryId } };
     }
 
     if (filters?.onlyFeatured) {
@@ -131,7 +131,7 @@ export class PrismaProductRepository implements IProductRepository {
         stock: product.stock,
         isActive: product.isActive,
         animalType: product.animalType,
-        subcategoryId: product.subcategoryId,
+        subcategories: { connect: product.subcategoryIds.map(id => ({ id })) },
         promoPrice: product.promoPrice?.getValue() ?? null,
         sku: product.sku,
         isFeatured: product.isFeatured,
@@ -163,7 +163,7 @@ export class PrismaProductRepository implements IProductRepository {
         stock: product.stock,
         isActive: product.isActive,
         animalType: product.animalType,
-        subcategoryId: product.subcategoryId,
+        subcategories: { set: product.subcategoryIds.map(id => ({ id })) },
         promoPrice: product.promoPrice?.getValue() ?? null,
         sku: product.sku,
         isFeatured: product.isFeatured,
@@ -274,7 +274,7 @@ export class PrismaProductRepository implements IProductRepository {
       isActive: data.isActive,
       images,
       animalType: data.animalType as AnimalType,
-      subcategoryId: data.subcategoryId ?? null,
+      subcategoryIds: data.subcategories?.map((s: any) => s.id) ?? [],
       promoPrice: data.promoPrice != null ? Money.create(Number(data.promoPrice)) : null,
       sku: data.sku,
       isFeatured: data.isFeatured,

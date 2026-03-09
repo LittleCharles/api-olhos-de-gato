@@ -152,7 +152,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     const productIds = results.map((r) => r.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      include: { subcategory: true },
+      include: { subcategories: true },
     });
 
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -162,7 +162,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       return {
         id: r.productId,
         name: product?.name ?? "Produto removido",
-        category: product?.subcategory?.name ?? "",
+        category: product?.subcategories?.map((s: any) => s.name).join(", ") ?? "",
         animalType: product?.animalType ?? "",
         sales: r._sum.quantity ?? 0,
         revenue: Number(r._sum.total ?? 0),

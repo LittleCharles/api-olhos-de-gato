@@ -20,7 +20,7 @@ export interface ProductProps {
   isActive: boolean;
   images: ProductImageProps[];
   animalType: AnimalType;
-  subcategoryId: string | null;
+  subcategoryIds: string[];
   promoPrice: Money | null;
   sku: string;
   isFeatured: boolean;
@@ -98,8 +98,8 @@ export class Product {
     return this.props.animalType;
   }
 
-  get subcategoryId(): string | null {
-    return this.props.subcategoryId;
+  get subcategoryIds(): string[] {
+    return this.props.subcategoryIds;
   }
 
   get promoPrice(): Money | null {
@@ -208,7 +208,7 @@ export class Product {
         | "categoryId"
         | "isActive"
         | "animalType"
-        | "subcategoryId"
+        | "subcategoryIds"
         | "sku"
         | "isFeatured"
         | "isRecommended"
@@ -233,8 +233,8 @@ export class Product {
     if (data.categoryId !== undefined) this.props.categoryId = data.categoryId;
     if (data.isActive !== undefined) this.props.isActive = data.isActive;
     if (data.animalType !== undefined) this.props.animalType = data.animalType;
-    if (data.subcategoryId !== undefined)
-      this.props.subcategoryId = data.subcategoryId;
+    if (data.subcategoryIds !== undefined)
+      this.props.subcategoryIds = data.subcategoryIds;
     if (data.sku !== undefined) this.props.sku = data.sku;
     if (data.isFeatured !== undefined) this.props.isFeatured = data.isFeatured;
     if (data.isRecommended !== undefined)
