@@ -42,8 +42,9 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch("/products/:id/featured", productController.toggleFeatured);
   app.patch("/products/:id/recommended", productController.toggleRecommended);
 
-  // Product Images (3 endpoints)
+  // Product Images (4 endpoints)
   app.post("/products/:id/images", productImageController.upload);
+  app.patch("/products/:id/images/reorder", productImageController.reorder);
   app.delete("/products/:id/images/:imageId", productImageController.delete);
   app.patch("/products/:id/images/:imageId/main", productImageController.setMain);
 

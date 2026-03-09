@@ -3,6 +3,7 @@ import { container } from "tsyringe";
 import { UploadProductImagesUseCase } from "../../../application/use-cases/product/UploadProductImagesUseCase.js";
 import { DeleteProductImageUseCase } from "../../../application/use-cases/product/DeleteProductImageUseCase.js";
 import { SetMainImageUseCase } from "../../../application/use-cases/product/SetMainImageUseCase.js";
+import { ReorderProductImagesUseCase } from "../../../application/use-cases/product/ReorderProductImagesUseCase.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class ProductImageController {
@@ -67,6 +68,26 @@ export class ProductImageController {
 
     const useCase = container.resolve(SetMainImageUseCase);
     const result = await useCase.execute(productId, imageId);
+
+    return reply.send(result);
+  }
+
+  async reorder(
+    request: FastifyRequest<{
+      Params: { id: string };
+      Body: { imageIds: string[] };
+    }>,
+    reply: FastifyReply,
+  ) {
+    const { id: productId } = request.params;
+    const { imageIds } = request.body as { imageIds: string[] };
+
+    if (!Array.isArray(imageIds) || imageIds.length === 0) {
+      throw new AppError("imageIds deve ser um array não vazio", 400);
+    }
+
+    const useCase = container.resolve(ReorderProductImagesUseCase);
+    const result = await useCase.execute(productId, imageIds);
 
     return reply.send(result);
   }

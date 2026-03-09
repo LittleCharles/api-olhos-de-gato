@@ -34,6 +34,7 @@ export class ProductPresenter {
         id: img.id,
         url: img.url,
         alt: img.alt,
+        order: img.order,
         isMain: img.isMain,
       })),
       mainImage: product.mainImage?.url ?? null,
