@@ -44,6 +44,7 @@ export class CartController {
         productPrice: item.productPrice,
         productPromoPrice: item.productPromoPrice,
         productImage: item.productImage,
+        productAnimalType: item.productAnimalType,
         quantity: item.quantity,
         subtotal: unitPrice * item.quantity,
       };

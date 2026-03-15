@@ -35,6 +35,7 @@ export class PrismaCartRepository implements ICartRepository {
         productPrice: Number(item.product.price),
         productPromoPrice: item.product.promoPrice ? Number(item.product.promoPrice) : null,
         productImage: item.product.images[0]?.url ?? null,
+        productAnimalType: item.product.animalType,
         quantity: item.quantity,
       })),
       createdAt: cart.createdAt,

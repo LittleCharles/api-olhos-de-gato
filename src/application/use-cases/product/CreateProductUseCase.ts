@@ -46,6 +46,7 @@ export class CreateProductUseCase {
       countryOrigin: data.countryOrigin ?? null,
       manufacturer: data.manufacturer ?? null,
       bulletPoints: data.bulletPoints ?? [],
+      specifications: (data.specifications ?? []).map((s, i) => ({ label: s.label, value: s.value, order: i })),
       createdAt: new Date(),
       updatedAt: new Date(),
     });

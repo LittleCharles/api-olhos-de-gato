@@ -14,6 +14,7 @@ export interface CartItemWithProduct {
   productPrice: number;
   productPromoPrice: number | null;
   productImage: string | null;
+  productAnimalType: string;
   quantity: number;
 }
 

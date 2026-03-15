@@ -56,6 +56,7 @@ export class UpdateProductUseCase {
       countryOrigin: data.countryOrigin,
       manufacturer: data.manufacturer,
       bulletPoints: data.bulletPoints,
+      specifications: data.specifications?.map((s, i) => ({ label: s.label, value: s.value, order: i })),
     });
 
     return this.productRepository.update(product);

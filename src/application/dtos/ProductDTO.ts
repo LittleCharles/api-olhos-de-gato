@@ -23,6 +23,7 @@ export const CreateProductSchema = z.object({
   countryOrigin: z.string().max(100).nullable().optional(),
   manufacturer: z.string().max(200).nullable().optional(),
   bulletPoints: z.array(z.string().max(200)).max(5).optional(),
+  specifications: z.array(z.object({ label: z.string().min(1).max(100), value: z.string().min(1).max(500) })).max(20).optional().default([]),
 });
 
 export const UpdateProductSchema = z.object({
@@ -47,6 +48,7 @@ export const UpdateProductSchema = z.object({
   countryOrigin: z.string().max(100).nullable().optional(),
   manufacturer: z.string().max(200).nullable().optional(),
   bulletPoints: z.array(z.string().max(200)).max(5).optional(),
+  specifications: z.array(z.object({ label: z.string().min(1).max(100), value: z.string().min(1).max(500) })).max(20).optional(),
 });
 
 // z.coerce.boolean() usa Boolean("false") = true, entao precisamos de coercao customizada

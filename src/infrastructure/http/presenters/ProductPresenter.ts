@@ -30,6 +30,12 @@ export class ProductPresenter {
       countryOrigin: product.countryOrigin,
       manufacturer: product.manufacturer,
       bulletPoints: product.bulletPoints,
+      specifications: product.specifications.map((s) => ({
+        id: s.id,
+        label: s.label,
+        value: s.value,
+        order: s.order,
+      })),
       images: product.images.map((img) => ({
         id: img.id,
         url: img.url,

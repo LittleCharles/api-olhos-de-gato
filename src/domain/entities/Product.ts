@@ -35,6 +35,7 @@ export interface ProductProps {
   countryOrigin: string | null;
   manufacturer: string | null;
   bulletPoints: string[];
+  specifications: { id?: string; label: string; value: string; order: number }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -158,6 +159,10 @@ export class Product {
     return this.props.bulletPoints;
   }
 
+  get specifications(): { id?: string; label: string; value: string; order: number }[] {
+    return this.props.specifications;
+  }
+
   isAvailable(): boolean {
     return this.props.isActive && this.props.stock > 0;
   }
@@ -221,6 +226,7 @@ export class Product {
         | "countryOrigin"
         | "manufacturer"
         | "bulletPoints"
+        | "specifications"
       >
     >,
   ): void {
@@ -248,6 +254,7 @@ export class Product {
     if (data.countryOrigin !== undefined) this.props.countryOrigin = data.countryOrigin;
     if (data.manufacturer !== undefined) this.props.manufacturer = data.manufacturer;
     if (data.bulletPoints !== undefined) this.props.bulletPoints = data.bulletPoints;
+    if (data.specifications !== undefined) this.props.specifications = data.specifications;
     this.props.updatedAt = new Date();
   }
 

@@ -14,7 +14,7 @@ import { AnimalType } from "../../../domain/enums/index.js";
 import { Prisma } from "@prisma/client";
 
 export class PrismaProductRepository implements IProductRepository {
-  private readonly includeRelations = { images: true, brand: true, subcategories: true } as const;
+  private readonly includeRelations = { images: true, brand: true, subcategories: true, specifications: { orderBy: { order: "asc" as const } } } as const;
 
   async findById(id: string): Promise<Product | null> {
     const product = await prisma.product.findUnique({
@@ -145,6 +145,13 @@ export class PrismaProductRepository implements IProductRepository {
         countryOrigin: product.countryOrigin,
         manufacturer: product.manufacturer,
         bulletPoints: product.bulletPoints,
+        specifications: {
+          create: product.specifications.map((s, i) => ({
+            label: s.label,
+            value: s.value,
+            order: i,
+          })),
+        },
       },
       include: this.includeRelations,
     });
@@ -152,6 +159,8 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async update(product: Product): Promise<Product> {
+    await prisma.productSpecification.deleteMany({ where: { productId: product.id } });
+
     const updated = await prisma.product.update({
       where: { id: product.id },
       data: {
@@ -177,6 +186,13 @@ export class PrismaProductRepository implements IProductRepository {
         countryOrigin: product.countryOrigin,
         manufacturer: product.manufacturer,
         bulletPoints: product.bulletPoints,
+        specifications: {
+          create: product.specifications.map((s, i) => ({
+            label: s.label,
+            value: s.value,
+            order: i,
+          })),
+        },
       },
       include: this.includeRelations,
     });
@@ -289,6 +305,12 @@ export class PrismaProductRepository implements IProductRepository {
       countryOrigin: data.countryOrigin ?? null,
       manufacturer: data.manufacturer ?? null,
       bulletPoints: data.bulletPoints ?? [],
+      specifications: (data.specifications || []).map((s: any) => ({
+        id: s.id,
+        label: s.label,
+        value: s.value,
+        order: s.order,
+      })),
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
