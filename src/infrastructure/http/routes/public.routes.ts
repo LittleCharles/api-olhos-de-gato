@@ -10,6 +10,7 @@ import { CartController } from "../controllers/CartController.js";
 import { FavoriteController } from "../controllers/FavoriteController.js";
 import { CustomerOrderController } from "../controllers/CustomerOrderController.js";
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
+import { webhookController } from "../controllers/WebhookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -78,4 +79,9 @@ export async function publicRoutes(app: FastifyInstance) {
 
   // Reviews (submit)
   app.post("/products/:id/reviews", { preHandler: customerAuth }, customerOrderController.createReview);
+
+  // Stripe Webhook (no auth, raw body)
+  app.post("/webhooks/stripe", {
+    config: { rawBody: true },
+  }, webhookController.stripeWebhook);
 }

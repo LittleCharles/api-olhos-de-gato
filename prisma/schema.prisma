@@ -348,6 +348,7 @@ model Order {
   notes           String?
   trackingCode    String?       @map("tracking_code")
   pickupLocation  String?       @map("pickup_location")
+  stripeSessionId String?       @map("stripe_session_id")
   source          String        @default("DIRECT")
   externalOrderId String?       @map("external_order_id")
   createdAt       DateTime      @default(now()) @map("created_at")

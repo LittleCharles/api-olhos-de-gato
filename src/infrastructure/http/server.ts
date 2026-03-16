@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import rawBody from "fastify-raw-body";
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
@@ -79,6 +80,9 @@ export async function buildServer() {
   await app.register(jwt, {
     secret: process.env.JWT_SECRET || "default-secret",
   });
+
+  // Raw body for Stripe webhooks
+  await app.register(rawBody, { runFirst: true });
 
   // Error handler
   app.setErrorHandler(errorHandler);

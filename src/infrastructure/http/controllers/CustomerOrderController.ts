@@ -12,6 +12,7 @@ import {
 import { OrderPresenter } from "../presenters/OrderPresenter.js";
 import { prisma } from "../../database/prisma/client.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import { stripeService } from "../../services/StripeService.js";
 
 export class CustomerOrderController {
   private async getCustomerId(userId: string): Promise<string> {
@@ -38,7 +39,34 @@ export class CustomerOrderController {
       pickupLocation: data.pickupLocation,
     });
 
-    return reply.status(201).send(OrderPresenter.toHTTP(order));
+    // Create Stripe Checkout Session
+    const user = await prisma.user.findUnique({
+      where: { id: request.user.id },
+      select: { email: true },
+    });
+
+    const checkoutItems = order.items.map((item) => ({
+      name: item.productName,
+      quantity: item.quantity,
+      unitPriceCents: Math.round(item.unitPrice.toNumber() * 100),
+    }));
+
+    const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
+      orderId: order.id,
+      items: checkoutItems,
+      customerEmail: user?.email,
+    });
+
+    // Save stripe session id on order
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { stripeSessionId: sessionId },
+    });
+
+    return reply.status(201).send({
+      ...OrderPresenter.toHTTP(order),
+      checkoutUrl: sessionUrl,
+    });
   }
 
   async list(request: FastifyRequest, reply: FastifyReply) {
