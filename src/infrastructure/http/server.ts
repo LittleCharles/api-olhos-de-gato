@@ -17,6 +17,9 @@ export async function buildServer() {
     logger: true,
   });
 
+  // Raw body for Stripe webhooks (must be registered first)
+  await app.register(rawBody, { field: "rawBody", global: true, runFirst: true });
+
   // Zod Type Provider Configuration
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
@@ -80,9 +83,6 @@ export async function buildServer() {
   await app.register(jwt, {
     secret: process.env.JWT_SECRET || "default-secret",
   });
-
-  // Raw body for Stripe webhooks
-  await app.register(rawBody, { runFirst: true });
 
   // Error handler
   app.setErrorHandler(errorHandler);

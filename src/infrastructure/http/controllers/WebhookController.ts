@@ -11,8 +11,12 @@ export class WebhookController {
     }
 
     try {
+      const body = request.rawBody;
+      if (!body) {
+        return reply.status(400).send({ error: "Missing raw body" });
+      }
       const event = stripeService.constructWebhookEvent(
-        request.rawBody as Buffer,
+        typeof body === "string" ? Buffer.from(body) : body as Buffer,
         signature,
       );
 
@@ -28,6 +32,35 @@ export class WebhookController {
                 paymentStatus: "PAID",
                 status: "CONFIRMED",
               },
+            });
+          }
+          break;
+        }
+
+        case "checkout.session.async_payment_succeeded": {
+          const session = event.data.object;
+          const orderId = session.metadata?.orderId;
+
+          if (orderId) {
+            await prisma.order.update({
+              where: { id: orderId },
+              data: {
+                paymentStatus: "PAID",
+                status: "CONFIRMED",
+              },
+            });
+          }
+          break;
+        }
+
+        case "checkout.session.async_payment_failed": {
+          const session = event.data.object;
+          const orderId = session.metadata?.orderId;
+
+          if (orderId) {
+            await prisma.order.update({
+              where: { id: orderId },
+              data: { paymentStatus: "FAILED" },
             });
           }
           break;
