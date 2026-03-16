@@ -48,7 +48,7 @@ export class CustomerOrderController {
     const checkoutItems = order.items.map((item) => ({
       name: item.productName,
       quantity: item.quantity,
-      unitPriceCents: Math.round(item.unitPrice.toNumber() * 100),
+      unitPriceCents: Math.round(item.unitPrice.getValue() * 100),
     }));
 
     const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
