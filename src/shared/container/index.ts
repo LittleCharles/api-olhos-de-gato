@@ -59,6 +59,7 @@ import { BcryptHashProvider } from "../../infrastructure/providers/hash/BcryptHa
 
 import { IStorageProvider } from "../../application/interfaces/IStorageProvider.js";
 import { LocalStorageProvider } from "../../infrastructure/providers/storage/LocalStorageProvider.js";
+import { R2StorageProvider } from "../../infrastructure/providers/storage/R2StorageProvider.js";
 
 import { IMailProvider } from "../../application/interfaces/IMailProvider.js";
 import { NodemailerMailProvider } from "../../infrastructure/providers/mail/NodemailerMailProvider.js";
@@ -135,7 +136,8 @@ container.registerSingleton<IBrandRepository>(
 
 // Register Providers
 container.registerSingleton<IHashProvider>("HashProvider", BcryptHashProvider);
-container.registerSingleton<IStorageProvider>("StorageProvider", LocalStorageProvider);
+const storageProvider = process.env.STORAGE_PROVIDER === "r2" ? R2StorageProvider : LocalStorageProvider;
+container.registerSingleton<IStorageProvider>("StorageProvider", storageProvider);
 container.registerSingleton<IMailProvider>("MailProvider", NodemailerMailProvider);
 
 export { container };
