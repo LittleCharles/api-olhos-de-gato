@@ -43,7 +43,9 @@ export class CartController {
         productSlug: item.productSlug,
         productPrice: item.productPrice,
         productPromoPrice: item.productPromoPrice,
-        productImage: item.productImage,
+        productImage: item.productImage && item.productImage.startsWith("/")
+          ? `${process.env.PUBLIC_URL ?? ""}${item.productImage}`
+          : item.productImage,
         productAnimalType: item.productAnimalType,
         quantity: item.quantity,
         subtotal: unitPrice * item.quantity,

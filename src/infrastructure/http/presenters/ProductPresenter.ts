@@ -1,5 +1,11 @@
 import { Product } from "../../../domain/entities/Product.js";
 
+const base = process.env.PUBLIC_URL ?? "";
+const prefixUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  return url.startsWith("/") ? `${base}${url}` : url;
+};
+
 export class ProductPresenter {
   static toHTTP(product: Product) {
     return {
@@ -38,12 +44,12 @@ export class ProductPresenter {
       })),
       images: product.images.map((img) => ({
         id: img.id,
-        url: img.url,
+        url: prefixUrl(img.url),
         alt: img.alt,
         order: img.order,
         isMain: img.isMain,
       })),
-      mainImage: product.mainImage?.url ?? null,
+      mainImage: prefixUrl(product.mainImage?.url),
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
     };
