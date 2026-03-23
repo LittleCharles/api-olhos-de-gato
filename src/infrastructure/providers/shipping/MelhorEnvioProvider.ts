@@ -8,6 +8,11 @@ import { AppError } from "../../../shared/errors/AppError.js";
 
 const STORE_CEP = "18040000"; // CEP da loja em Sorocaba
 
+const FRIENDLY_NAMES: Record<string, string> = {
+  ".Package": "Jadlog Package",
+  ".Com": "Jadlog Expresso",
+};
+
 @injectable()
 export class MelhorEnvioProvider implements IShippingProvider {
   private baseUrl: string;
@@ -96,9 +101,12 @@ export class MelhorEnvioProvider implements IShippingProvider {
       for (const item of data) {
         if (item.error) continue;
 
+        const rawName = item.name || "";
+        const serviceName = FRIENDLY_NAMES[rawName] || rawName;
+
         options.push({
           serviceId: item.id,
-          serviceName: item.name,
+          serviceName,
           company: item.company?.name || "Transportadora",
           price: parseFloat(item.custom_price || item.price),
           deliveryDays: parseInt(item.custom_delivery_time || item.delivery_time),
