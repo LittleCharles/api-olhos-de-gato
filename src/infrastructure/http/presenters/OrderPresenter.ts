@@ -26,6 +26,7 @@ export class OrderPresenter {
         id: item.id,
         productId: item.productId,
         productName: item.productName,
+        productImage: item.productImage ?? null,
         quantity: item.quantity,
         unitPrice: item.unitPrice.getValue(),
         unitPriceFormatted: item.unitPrice.format(),

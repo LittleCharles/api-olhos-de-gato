@@ -5,6 +5,7 @@ export interface OrderItemProps {
   id: string;
   productId: string;
   productName: string;
+  productImage?: string | null;
   quantity: number;
   unitPrice: Money;
   total: Money;

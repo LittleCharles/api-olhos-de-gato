@@ -24,7 +24,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       where: { id },
       include: {
         items: {
-          include: { product: true },
+          include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
         },
         customer: {
           include: { user: true },
@@ -44,7 +44,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       where: { id },
       include: {
         items: {
-          include: { product: true },
+          include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
         },
         customer: {
           include: {
@@ -76,7 +76,7 @@ export class PrismaOrderRepository implements IOrderRepository {
         where,
         include: {
           items: {
-            include: { product: true },
+            include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
           },
           customer: {
             include: { user: true },
@@ -153,7 +153,7 @@ export class PrismaOrderRepository implements IOrderRepository {
         where,
         include: {
           items: {
-            include: { product: true },
+            include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
           },
           customer: {
             include: { user: true },
@@ -208,7 +208,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       },
       include: {
         items: {
-          include: { product: true },
+          include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
         },
         customer: {
           include: { user: true },
@@ -234,7 +234,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       },
       include: {
         items: {
-          include: { product: true },
+          include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
         },
         customer: {
           include: { user: true },
@@ -274,6 +274,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       id: item.id,
       productId: item.productId,
       productName: item.product?.name ?? "",
+      productImage: item.product?.images?.[0]?.url ?? null,
       quantity: item.quantity,
       unitPrice: Money.create(Number(item.unitPrice)),
       total: Money.create(Number(item.total)),
