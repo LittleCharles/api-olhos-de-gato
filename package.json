@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc",
+    "build": "npx prisma generate && npx prisma db push && tsc",
     "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
