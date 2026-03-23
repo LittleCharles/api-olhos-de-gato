@@ -64,6 +64,9 @@ import { R2StorageProvider } from "../../infrastructure/providers/storage/R2Stor
 import { IMailProvider } from "../../application/interfaces/IMailProvider.js";
 import { NodemailerMailProvider } from "../../infrastructure/providers/mail/NodemailerMailProvider.js";
 
+import { IShippingProvider } from "../../application/interfaces/IShippingProvider.js";
+import { MelhorEnvioProvider } from "../../infrastructure/providers/shipping/MelhorEnvioProvider.js";
+
 // Register Repositories
 container.registerSingleton<IUserRepository>(
   "UserRepository",
@@ -139,5 +142,6 @@ container.registerSingleton<IHashProvider>("HashProvider", BcryptHashProvider);
 const storageProvider = process.env.STORAGE_PROVIDER === "r2" ? R2StorageProvider : LocalStorageProvider;
 container.registerSingleton<IStorageProvider>("StorageProvider", storageProvider);
 container.registerSingleton<IMailProvider>("MailProvider", NodemailerMailProvider);
+container.registerSingleton<IShippingProvider>("ShippingProvider", MelhorEnvioProvider);
 
 export { container };

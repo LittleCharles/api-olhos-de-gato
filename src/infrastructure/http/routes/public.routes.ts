@@ -10,6 +10,7 @@ import { CartController } from "../controllers/CartController.js";
 import { FavoriteController } from "../controllers/FavoriteController.js";
 import { CustomerOrderController } from "../controllers/CustomerOrderController.js";
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
+import { ShippingController } from "../controllers/ShippingController.js";
 import { webhookController } from "../controllers/WebhookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
@@ -25,6 +26,7 @@ const cartController = new CartController();
 const favoriteController = new FavoriteController();
 const customerOrderController = new CustomerOrderController();
 const supportTicketController = new SupportTicketController();
+const shippingController = new ShippingController();
 
 export async function publicRoutes(app: FastifyInstance) {
   // Auth
@@ -43,6 +45,9 @@ export async function publicRoutes(app: FastifyInstance) {
 
   // Store settings (public)
   app.get("/settings", settingsController.get);
+
+  // Shipping
+  app.post("/shipping/calculate", shippingController.calculate);
 
   // Support Tickets (auth optional - links customer if logged in)
   app.post("/tickets", { preHandler: optionalAuthMiddleware() }, supportTicketController.create);

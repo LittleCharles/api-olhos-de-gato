@@ -23,6 +23,9 @@ export interface OrderProps {
   notes?: string | null;
   trackingCode?: string | null;
   pickupLocation?: string | null;
+  shippingCost?: Money;
+  shippingService?: string | null;
+  shippingDays?: number | null;
   items: OrderItemProps[];
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +84,18 @@ export class Order {
 
   get pickupLocation(): string | null | undefined {
     return this.props.pickupLocation;
+  }
+
+  get shippingCost(): Money | undefined {
+    return this.props.shippingCost;
+  }
+
+  get shippingService(): string | null | undefined {
+    return this.props.shippingService;
+  }
+
+  get shippingDays(): number | null | undefined {
+    return this.props.shippingDays;
   }
 
   get items(): OrderItemProps[] {

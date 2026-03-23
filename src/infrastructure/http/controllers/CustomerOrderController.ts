@@ -37,6 +37,9 @@ export class CustomerOrderController {
       addressId: data.addressId,
       notes: data.notes,
       pickupLocation: data.pickupLocation,
+      shippingCost: data.shippingCost,
+      shippingService: data.shippingService,
+      shippingDays: data.shippingDays,
     });
 
     // Create Stripe Checkout Session
@@ -50,6 +53,16 @@ export class CustomerOrderController {
       quantity: item.quantity,
       unitPriceCents: Math.round(item.unitPrice.getValue() * 100),
     }));
+
+    // Add shipping as line item if present
+    const shippingCostValue = order.shippingCost?.getValue() ?? 0;
+    if (shippingCostValue > 0) {
+      checkoutItems.push({
+        name: `Frete (${order.shippingService || "Envio"})`,
+        quantity: 1,
+        unitPriceCents: Math.round(shippingCostValue * 100),
+      });
+    }
 
     const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
       orderId: order.id,

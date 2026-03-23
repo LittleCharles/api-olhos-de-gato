@@ -6,6 +6,9 @@ export const CustomerCreateOrderSchema = z.object({
   addressId: z.string().uuid().optional(),
   notes: z.string().optional(),
   pickupLocation: z.string().optional(),
+  shippingCost: z.number().min(0).optional(),
+  shippingService: z.string().optional(),
+  shippingDays: z.number().int().positive().optional(),
 });
 
 export const CustomerOrderFiltersSchema = z.object({

@@ -18,6 +18,10 @@ export class OrderPresenter {
       notes: order.notes,
       trackingCode: order.trackingCode,
       pickupLocation: order.pickupLocation,
+      shippingCost: order.shippingCost?.getValue() ?? 0,
+      shippingCostFormatted: order.shippingCost?.format() ?? "R$ 0,00",
+      shippingService: order.shippingService,
+      shippingDays: order.shippingDays,
       items: order.items.map((item) => ({
         id: item.id,
         productId: item.productId,

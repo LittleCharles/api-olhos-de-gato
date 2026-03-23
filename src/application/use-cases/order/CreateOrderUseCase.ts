@@ -14,6 +14,9 @@ interface CreateOrderInput {
   addressId?: string;
   notes?: string;
   pickupLocation?: string;
+  shippingCost?: number;
+  shippingService?: string;
+  shippingDays?: number;
 }
 
 @injectable()
@@ -68,7 +71,8 @@ export class CreateOrderUseCase {
     }
 
     const discount = Money.zero();
-    const total = subtotal;
+    const shippingCost = input.shippingCost ? Money.create(input.shippingCost) : Money.zero();
+    const total = subtotal.add(shippingCost);
 
     const order = new Order({
       id: randomUUID(),
@@ -83,6 +87,9 @@ export class CreateOrderUseCase {
       notes: input.notes ?? null,
       trackingCode: null,
       pickupLocation: input.pickupLocation ?? null,
+      shippingCost,
+      shippingService: input.shippingService ?? null,
+      shippingDays: input.shippingDays ?? null,
       items: orderItems,
       createdAt: new Date(),
       updatedAt: new Date(),
