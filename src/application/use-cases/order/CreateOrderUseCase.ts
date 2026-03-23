@@ -97,6 +97,11 @@ export class CreateOrderUseCase {
 
     const createdOrder = await this.orderRepository.create(order);
 
+    // Reduce stock for each product
+    for (const item of orderItems) {
+      await this.productRepository.updateStock(item.productId, -item.quantity);
+    }
+
     // Clear cart after order creation
     await this.cartRepository.clearCart(cart.id);
 
