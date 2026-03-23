@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "npx prisma generate && npx prisma db push && tsc",
-    "start": "node dist/main.js",
+    "build": "npx prisma generate && tsc",
+    "start": "npx prisma db push && node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
