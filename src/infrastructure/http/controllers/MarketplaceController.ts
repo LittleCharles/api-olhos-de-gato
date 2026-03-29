@@ -52,17 +52,22 @@ export class MarketplaceController {
   }
 
   async oauthCallback(
-    request: FastifyRequest<{ Params: { platform: string } }>,
+    request: FastifyRequest<{ Params: { platform: string }; Querystring: { code?: string } }>,
     reply: FastifyReply,
   ) {
     const platform = MarketplacePlatformParam.parse(request.params.platform);
-    const { code } = OAuthCallbackSchema.parse(request.body);
+    const code = request.query.code || (request.body as any)?.code;
+    if (!code) {
+      throw new AppError("Código de autorização não fornecido", 400);
+    }
     const provider = getProvider(platform);
 
     const useCase = container.resolve(ConnectMarketplaceUseCase);
     const account = await useCase.execute(platform, code, provider);
 
-    return reply.status(201).send(MarketplacePresenter.accountToHTTP(account));
+    // Redirect back to admin panel after successful OAuth
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    return reply.redirect(`${frontendUrl}/admin/marketplace?connected=${platform}`);
   }
 
   async disconnect(

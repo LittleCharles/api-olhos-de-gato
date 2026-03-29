@@ -100,10 +100,9 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch("/tickets/:id/status", supportTicketController.updateStatus);
   app.post("/tickets/:id/replies", supportTicketController.reply);
 
-  // Marketplace Accounts (4 endpoints)
+  // Marketplace Accounts (3 endpoints — callback is public, registered in index.ts)
   app.get("/marketplace/accounts", marketplaceController.listAccounts);
   app.get("/marketplace/accounts/:platform/auth-url", marketplaceController.getAuthUrl);
-  app.post("/marketplace/accounts/:platform/callback", marketplaceController.oauthCallback);
   app.delete("/marketplace/accounts/:platform", marketplaceController.disconnect);
 
   // Marketplace Listings (7 endpoints)
