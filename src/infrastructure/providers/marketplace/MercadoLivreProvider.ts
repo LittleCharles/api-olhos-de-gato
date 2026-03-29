@@ -112,7 +112,7 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       available_quantity: product.stock,
       buying_mode: "buy_it_now",
       condition: "new",
-      listing_type_id: "gold_special",
+      listing_type_id: "gold_pro",
       description: { plain_text: product.description || "" },
       pictures: imageUrls.length > 0 ? imageUrls : undefined,
       seller_custom_field: product.sku,
@@ -129,7 +129,11 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
 
     if (!response.ok) {
       const error = await response.json() as any;
-      throw new Error(error.message || `Erro ${response.status} ao criar anúncio no ML`);
+      const causes = Array.isArray(error.cause)
+        ? error.cause.map((c: any) => `${c.code || ""}: ${c.message || ""}`).join("; ")
+        : "";
+      const errorMsg = [error.message, causes, error.error].filter(Boolean).join(" | ");
+      throw new Error(errorMsg || `Erro ${response.status} ao criar anúncio no ML`);
     }
 
     const result = await response.json() as any;
