@@ -100,13 +100,31 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
   }
 
   async createListing(product: Product, listing: MarketplaceListing, accessToken: string): Promise<ExternalListing> {
+    // Auto-predict category from product title if not manually set
+    let categoryId = listing.categoryMapping;
+    if (!categoryId) {
+      try {
+        const predictUrl = `${ML_API_URL}/sites/MLB/category_predictor/predict?title=${encodeURIComponent(product.name)}`;
+        const predictResponse = await fetch(predictUrl);
+        if (predictResponse.ok) {
+          const prediction = await predictResponse.json() as any;
+          categoryId = prediction.id;
+        }
+      } catch {
+        // Ignore prediction errors, use fallback
+      }
+    }
+    if (!categoryId) {
+      categoryId = "MLB270533"; // Fallback: Petiscos para Caes
+    }
+
     const imageUrls = product.images
       .sort((a, b) => a.order - b.order)
       .map((img) => ({ source: img.url }));
 
     const body = {
       title: product.name.substring(0, 60),
-      category_id: listing.categoryMapping || "MLB1071", // Default: Acessorios para Animais
+      category_id: categoryId,
       price: listing.price.getValue(),
       currency_id: "BRL",
       available_quantity: product.stock,
