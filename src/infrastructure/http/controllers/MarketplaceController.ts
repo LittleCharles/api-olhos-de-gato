@@ -4,6 +4,7 @@ import { ListMarketplaceAccountsUseCase } from "../../../application/use-cases/m
 import { ConnectMarketplaceUseCase } from "../../../application/use-cases/marketplace/ConnectMarketplaceUseCase.js";
 import { DisconnectMarketplaceUseCase } from "../../../application/use-cases/marketplace/DisconnectMarketplaceUseCase.js";
 import { CreateListingUseCase } from "../../../application/use-cases/marketplace/CreateListingUseCase.js";
+import { CreateBatchListingsUseCase } from "../../../application/use-cases/marketplace/CreateBatchListingsUseCase.js";
 import { UpdateListingUseCase } from "../../../application/use-cases/marketplace/UpdateListingUseCase.js";
 import { PublishListingUseCase } from "../../../application/use-cases/marketplace/PublishListingUseCase.js";
 import { PauseListingUseCase } from "../../../application/use-cases/marketplace/PauseListingUseCase.js";
@@ -14,6 +15,7 @@ import {
   MarketplacePlatformParam,
   OAuthCallbackSchema,
   CreateListingSchema,
+  CreateBatchListingSchema,
   UpdateListingSchema,
   ListingFiltersSchema,
 } from "../../../application/dtos/MarketplaceDTO.js";
@@ -101,6 +103,20 @@ export class MarketplaceController {
     const listing = await useCase.execute(data);
 
     return reply.status(201).send(MarketplacePresenter.listingToHTTP(listing));
+  }
+
+  async createListingsBatch(request: FastifyRequest, reply: FastifyReply) {
+    const data = CreateBatchListingSchema.parse(request.body);
+
+    const useCase = container.resolve(CreateBatchListingsUseCase);
+    const result = await useCase.execute(data);
+
+    return reply.status(201).send({
+      created: result.created,
+      skipped: result.skipped,
+      errors: result.errors,
+      listings: result.listings.map(MarketplacePresenter.listingToHTTP),
+    });
   }
 
   async updateListing(

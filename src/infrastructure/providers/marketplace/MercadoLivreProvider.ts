@@ -99,10 +99,7 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
     };
   }
 
-  async createListing(product: Product, listing: MarketplaceListing): Promise<ExternalListing> {
-    const account = listing.accountId; // Will need access token passed differently
-    // For now, we'll fetch it from the listing metadata or pass via a different mechanism
-
+  async createListing(product: Product, listing: MarketplaceListing, accessToken: string): Promise<ExternalListing> {
     const imageUrls = product.images
       .sort((a, b) => a.order - b.order)
       .map((img) => ({ source: img.url }));
@@ -120,12 +117,6 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       pictures: imageUrls.length > 0 ? imageUrls : undefined,
       seller_custom_field: product.sku,
     };
-
-    // Access token will be retrieved from account in the controller layer
-    const accessToken = (listing.metadata as any)?.accessToken;
-    if (!accessToken) {
-      throw new Error("Access token não disponível para criar anúncio");
-    }
 
     const response = await fetch(`${ML_API_URL}/items`, {
       method: "POST",
@@ -149,11 +140,8 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
     };
   }
 
-  async updateListing(listing: MarketplaceListing, product: Product): Promise<void> {
+  async updateListing(listing: MarketplaceListing, product: Product, accessToken: string): Promise<void> {
     if (!listing.externalId) return;
-
-    const accessToken = (listing.metadata as any)?.accessToken;
-    if (!accessToken) return;
 
     const body = {
       price: listing.price.getValue(),
@@ -175,19 +163,52 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
     }
   }
 
-  async updateStock(externalId: string, quantity: number): Promise<void> {
-    // Access token needs to be passed — this will be handled by the job layer
-    // For now, this is a placeholder. The actual implementation will use the account token.
-    throw new Error("updateStock deve ser chamado via SyncStockUseCase com token do account");
+  async updateStock(externalId: string, quantity: number, accessToken: string): Promise<void> {
+    const response = await fetch(`${ML_API_URL}/items/${externalId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ available_quantity: quantity }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as any;
+      throw new Error(error.message || `Erro ${response.status} ao atualizar estoque no ML`);
+    }
   }
 
-  async pauseListing(externalId: string): Promise<void> {
-    // Similar to updateStock — needs access token from the account
-    throw new Error("pauseListing deve ser chamado com token do account");
+  async pauseListing(externalId: string, accessToken: string): Promise<void> {
+    const response = await fetch(`${ML_API_URL}/items/${externalId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: "paused" }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as any;
+      throw new Error(error.message || `Erro ${response.status} ao pausar anúncio no ML`);
+    }
   }
 
-  async activateListing(externalId: string): Promise<void> {
-    throw new Error("activateListing deve ser chamado com token do account");
+  async activateListing(externalId: string, accessToken: string): Promise<void> {
+    const response = await fetch(`${ML_API_URL}/items/${externalId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: "active" }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as any;
+      throw new Error(error.message || `Erro ${response.status} ao ativar anúncio no ML`);
+    }
   }
 
   async getCategories(query?: string): Promise<MarketplaceCategory[]> {

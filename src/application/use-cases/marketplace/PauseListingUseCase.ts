@@ -26,9 +26,14 @@ export class PauseListingUseCase {
       throw new AppError("Anúncio não está ativo", 400);
     }
 
+    const account = await this.accountRepository.findById(listing.accountId);
+    if (!account || !account.isActive || !account.accessToken) {
+      throw new AppError("Conta de marketplace não está ativa ou sem token", 400);
+    }
+
     if (listing.externalId) {
       try {
-        await provider.pauseListing(listing.externalId);
+        await provider.pauseListing(listing.externalId, account.accessToken);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro desconhecido";
         listing.markError(message);

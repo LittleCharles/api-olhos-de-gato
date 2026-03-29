@@ -34,6 +34,10 @@ export class PublishListingUseCase {
       throw new AppError("Conta de marketplace não está ativa", 400);
     }
 
+    if (!account.accessToken) {
+      throw new AppError("Token de acesso não disponível. Reconecte o marketplace.", 401);
+    }
+
     const product = await this.productRepository.findById(listing.productId);
     if (!product) {
       throw new AppError("Produto não encontrado", 404);
@@ -41,10 +45,10 @@ export class PublishListingUseCase {
 
     try {
       if (listing.externalId) {
-        await provider.activateListing(listing.externalId);
+        await provider.activateListing(listing.externalId, account.accessToken);
         listing.activate();
       } else {
-        const result = await provider.createListing(product, listing);
+        const result = await provider.createListing(product, listing, account.accessToken);
         listing.publish(result.externalId, result.externalUrl);
       }
 

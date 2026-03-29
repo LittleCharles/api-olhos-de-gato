@@ -39,11 +39,11 @@ export interface IMarketplaceProvider {
   getAuthUrl(): string;
   exchangeCode(code: string): Promise<TokenPair>;
   refreshToken(refreshToken: string): Promise<TokenPair>;
-  createListing(product: Product, listing: MarketplaceListing): Promise<ExternalListing>;
-  updateListing(listing: MarketplaceListing, product: Product): Promise<void>;
-  updateStock(externalId: string, quantity: number): Promise<void>;
-  pauseListing(externalId: string): Promise<void>;
-  activateListing(externalId: string): Promise<void>;
+  createListing(product: Product, listing: MarketplaceListing, accessToken: string): Promise<ExternalListing>;
+  updateListing(listing: MarketplaceListing, product: Product, accessToken: string): Promise<void>;
+  updateStock(externalId: string, quantity: number, accessToken: string): Promise<void>;
+  pauseListing(externalId: string, accessToken: string): Promise<void>;
+  activateListing(externalId: string, accessToken: string): Promise<void>;
   getCategories(query?: string): Promise<MarketplaceCategory[]>;
   getOrders(accessToken: string, sellerId: string, since: Date): Promise<ExternalOrder[]>;
 }

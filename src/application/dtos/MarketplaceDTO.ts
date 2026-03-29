@@ -36,9 +36,15 @@ export const ListingFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const CreateBatchListingSchema = z.object({
+  accountId: z.string().uuid(),
+  productIds: z.array(z.string().uuid()).min(1).max(100),
+});
+
 // ==================== Types ====================
 
 export type OAuthCallbackDTO = z.infer<typeof OAuthCallbackSchema>;
 export type CreateListingDTO = z.infer<typeof CreateListingSchema>;
 export type UpdateListingDTO = z.infer<typeof UpdateListingSchema>;
+export type CreateBatchListingDTO = z.infer<typeof CreateBatchListingSchema>;
 export type ListingFiltersDTO = z.infer<typeof ListingFiltersSchema>;

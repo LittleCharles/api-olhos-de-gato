@@ -106,9 +106,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/marketplace/accounts/:platform/callback", marketplaceController.oauthCallback);
   app.delete("/marketplace/accounts/:platform", marketplaceController.disconnect);
 
-  // Marketplace Listings (6 endpoints)
+  // Marketplace Listings (7 endpoints)
   app.get("/marketplace/listings", marketplaceController.listListings);
   app.post("/marketplace/listings", marketplaceController.createListing);
+  app.post("/marketplace/listings/batch", marketplaceController.createListingsBatch);
   app.put("/marketplace/listings/:id", marketplaceController.updateListing);
   app.patch("/marketplace/listings/:id/publish", marketplaceController.publishListing);
   app.patch("/marketplace/listings/:id/pause", marketplaceController.pauseListing);

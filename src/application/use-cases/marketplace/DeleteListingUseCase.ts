@@ -1,4 +1,5 @@
 import { inject, injectable } from "tsyringe";
+import type { IMarketplaceAccountRepository } from "../../../domain/repositories/IMarketplaceAccountRepository.js";
 import type { IMarketplaceListingRepository } from "../../../domain/repositories/IMarketplaceListingRepository.js";
 import type { IMarketplaceProvider } from "../../interfaces/IMarketplaceProvider.js";
 import { MarketplaceListingStatus } from "../../../domain/enums/index.js";
@@ -7,6 +8,8 @@ import { AppError } from "../../../shared/errors/AppError.js";
 @injectable()
 export class DeleteListingUseCase {
   constructor(
+    @inject("MarketplaceAccountRepository")
+    private accountRepository: IMarketplaceAccountRepository,
     @inject("MarketplaceListingRepository")
     private listingRepository: IMarketplaceListingRepository,
   ) {}
@@ -20,7 +23,10 @@ export class DeleteListingUseCase {
 
     if (listing.externalId && listing.status === MarketplaceListingStatus.ACTIVE && provider) {
       try {
-        await provider.pauseListing(listing.externalId);
+        const account = await this.accountRepository.findById(listing.accountId);
+        if (account?.accessToken) {
+          await provider.pauseListing(listing.externalId, account.accessToken);
+        }
       } catch {
         // Best effort — still delete locally
       }

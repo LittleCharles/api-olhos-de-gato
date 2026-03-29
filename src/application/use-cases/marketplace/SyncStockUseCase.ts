@@ -21,6 +21,11 @@ export class SyncStockUseCase {
   ) {}
 
   async execute(provider: IMarketplaceProvider, accountId: string): Promise<SyncResult> {
+    const account = await this.accountRepository.findById(accountId);
+    if (!account || !account.accessToken) {
+      return { synced: 0, errors: 0 };
+    }
+
     const listings = await this.listingRepository.findActiveByAccountId(accountId);
 
     let synced = 0;
@@ -38,7 +43,7 @@ export class SyncStockUseCase {
           continue;
         }
 
-        await provider.updateStock(listing.externalId, product.stock);
+        await provider.updateStock(listing.externalId, product.stock, account.accessToken);
         listing.markSynced();
         await this.listingRepository.update(listing);
         synced++;
