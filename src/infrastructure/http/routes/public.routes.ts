@@ -12,6 +12,9 @@ import { CustomerOrderController } from "../controllers/CustomerOrderController.
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
 import { ShippingController } from "../controllers/ShippingController.js";
 import { webhookController } from "../controllers/WebhookController.js";
+import { MarketplaceWebhookController } from "../controllers/MarketplaceWebhookController.js";
+
+const marketplaceWebhookController = new MarketplaceWebhookController();
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -89,4 +92,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.post("/webhooks/stripe", {
     config: { rawBody: true },
   }, webhookController.stripeWebhook);
+
+  // Mercado Livre Webhook (no auth — ML sends notifications here)
+  app.post("/webhooks/mercado-livre", marketplaceWebhookController.handleNotification);
 }
