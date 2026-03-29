@@ -129,22 +129,37 @@ export class SyncMLOrdersUseCase {
   }
 
   private async getOrCreateMLCustomerId(): Promise<string> {
-    // Find or create a placeholder customer for ML orders
-    let customer = await this.prisma.customer.findFirst({
-      where: { email: "marketplace@olhosdegato.com.br" },
+    // Find or create a placeholder User + Customer for ML orders
+    const mlEmail = "marketplace@olhosdegato.com.br";
+
+    let user = await this.prisma.user.findUnique({
+      where: { email: mlEmail },
+      include: { customer: true },
     });
 
-    if (!customer) {
-      customer = await this.prisma.customer.create({
+    if (!user) {
+      user = await this.prisma.user.create({
         data: {
+          email: mlEmail,
           name: "Mercado Livre",
-          email: "marketplace@olhosdegato.com.br",
           passwordHash: "marketplace-placeholder",
+          role: "CUSTOMER",
           isActive: true,
+          customer: {
+            create: {},
+          },
         },
+        include: { customer: true },
       });
     }
 
-    return customer.id;
+    if (!user.customer) {
+      const customer = await this.prisma.customer.create({
+        data: { userId: user.id },
+      });
+      return customer.id;
+    }
+
+    return user.customer.id;
   }
 }
