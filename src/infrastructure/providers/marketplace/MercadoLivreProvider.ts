@@ -122,6 +122,40 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       .sort((a, b) => a.order - b.order)
       .map((img) => ({ source: img.url }));
 
+    // Build attributes array
+    const attributes: Array<{ id: string; value_name: string }> = [];
+    if (product.brandName) {
+      attributes.push({ id: "BRAND", value_name: product.brandName });
+    }
+    if (product.ean) {
+      attributes.push({ id: "GTIN", value_name: product.ean });
+    }
+    if (product.weight) {
+      attributes.push({ id: "NET_WEIGHT", value_name: `${product.weight} kg` });
+    }
+    attributes.push({ id: "SALE_FORMAT", value_name: "Unidade" });
+    attributes.push({ id: "UNITS_PER_PACKAGE", value_name: "1" });
+
+    // Build enriched description with bullet points and specifications
+    let descriptionText = product.description || "";
+    if (product.bulletPoints.length > 0) {
+      descriptionText += "\n\nDestaques:\n" + product.bulletPoints.map((bp) => `• ${bp}`).join("\n");
+    }
+    if (product.specifications.length > 0) {
+      descriptionText += "\n\nEspecificações:\n" + product.specifications
+        .sort((a, b) => a.order - b.order)
+        .map((s) => `${s.label}: ${s.value}`)
+        .join("\n");
+    }
+
+    // Build shipping info with dimensions
+    const shipping: Record<string, unknown> = { mode: "not_specified", free_shipping: false };
+    if (product.lengthCm && product.widthCm && product.heightCm) {
+      // ML format: "LxWxH,weight_in_grams"
+      const weightGrams = Math.round((product.weight || 0) * 1000);
+      shipping.dimensions = `${product.lengthCm}x${product.widthCm}x${product.heightCm},${weightGrams}`;
+    }
+
     const body = {
       title: product.name.substring(0, 60),
       category_id: categoryId,
@@ -131,9 +165,11 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       buying_mode: "buy_it_now",
       condition: "new",
       listing_type_id: "gold_pro",
-      description: { plain_text: product.description || "" },
+      description: { plain_text: descriptionText },
       pictures: imageUrls.length > 0 ? imageUrls : undefined,
       seller_custom_field: product.sku,
+      attributes: attributes.length > 0 ? attributes : undefined,
+      shipping,
     };
 
     const response = await fetch(`${ML_API_URL}/items`, {
