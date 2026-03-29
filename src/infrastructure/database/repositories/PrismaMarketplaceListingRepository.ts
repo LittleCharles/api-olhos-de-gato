@@ -77,6 +77,17 @@ export class PrismaMarketplaceListingRepository implements IMarketplaceListingRe
     return listings.map((l) => this.mapToEntity(l));
   }
 
+  async findPublishedByAccountId(accountId: string): Promise<MarketplaceListing[]> {
+    const listings = await prisma.marketplaceListing.findMany({
+      where: {
+        accountId,
+        externalId: { not: null },
+        status: { in: ["ACTIVE", "PAUSED"] },
+      },
+    });
+    return listings.map((l) => this.mapToEntity(l));
+  }
+
   async findByProductId(productId: string): Promise<MarketplaceListing[]> {
     const listings = await prisma.marketplaceListing.findMany({
       where: { productId },

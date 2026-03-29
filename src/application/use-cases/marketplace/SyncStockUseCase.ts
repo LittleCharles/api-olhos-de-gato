@@ -26,7 +26,7 @@ export class SyncStockUseCase {
       return { synced: 0, errors: 0 };
     }
 
-    const listings = await this.listingRepository.findActiveByAccountId(accountId);
+    const listings = await this.listingRepository.findPublishedByAccountId(accountId);
 
     let synced = 0;
     let errors = 0;

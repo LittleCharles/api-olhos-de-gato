@@ -28,6 +28,7 @@ export interface IMarketplaceListingRepository {
     pagination?: MarketplaceListingPaginationParams,
   ): Promise<PaginatedMarketplaceListings>;
   findActiveByAccountId(accountId: string): Promise<MarketplaceListing[]>;
+  findPublishedByAccountId(accountId: string): Promise<MarketplaceListing[]>;
   findByProductId(productId: string): Promise<MarketplaceListing[]>;
   create(listing: MarketplaceListing): Promise<MarketplaceListing>;
   update(listing: MarketplaceListing): Promise<MarketplaceListing>;
