@@ -34,6 +34,17 @@ export class PublishListingUseCase {
       throw new AppError("Conta de marketplace não está ativa", 400);
     }
 
+    // Auto-refresh token if expired
+    if (account.isTokenExpired() && account.refreshToken) {
+      try {
+        const tokens = await provider.refreshToken(account.refreshToken);
+        account.updateTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt);
+        await this.accountRepository.update(account);
+      } catch {
+        throw new AppError("Token expirado e não foi possível renovar. Reconecte o marketplace.", 401);
+      }
+    }
+
     if (!account.accessToken) {
       throw new AppError("Token de acesso não disponível. Reconecte o marketplace.", 401);
     }

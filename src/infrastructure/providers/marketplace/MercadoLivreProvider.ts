@@ -133,8 +133,7 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
     if (product.weight) {
       attributes.push({ id: "NET_WEIGHT", value_name: `${product.weight} kg` });
     }
-    attributes.push({ id: "SALE_FORMAT", value_name: "Unidade" });
-    attributes.push({ id: "UNITS_PER_PACKAGE", value_name: "1" });
+    attributes.push({ id: "UNITS_PER_PACK", value_name: "1" });
 
     // Build enriched description with bullet points and specifications
     let descriptionText = product.description || "";
@@ -169,6 +168,9 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       pictures: imageUrls.length > 0 ? imageUrls : undefined,
       seller_custom_field: product.sku,
       attributes: attributes.length > 0 ? attributes : undefined,
+      sale_terms: [
+        { id: "SALE_FORMAT", value_name: "Unidade" },
+      ],
       shipping,
     };
 

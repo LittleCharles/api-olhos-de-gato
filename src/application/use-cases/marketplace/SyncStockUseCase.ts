@@ -22,7 +22,22 @@ export class SyncStockUseCase {
 
   async execute(provider: IMarketplaceProvider, accountId: string): Promise<SyncResult> {
     const account = await this.accountRepository.findById(accountId);
-    if (!account || !account.accessToken) {
+    if (!account) {
+      return { synced: 0, errors: 0 };
+    }
+
+    // Auto-refresh token if expired
+    if (account.isTokenExpired() && account.refreshToken) {
+      try {
+        const tokens = await provider.refreshToken(account.refreshToken);
+        account.updateTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt);
+        await this.accountRepository.update(account);
+      } catch {
+        return { synced: 0, errors: 0 };
+      }
+    }
+
+    if (!account.accessToken) {
       return { synced: 0, errors: 0 };
     }
 

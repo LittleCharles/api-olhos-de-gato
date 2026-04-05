@@ -91,15 +91,15 @@ async function syncMLOrdersToLocal(): Promise<void> {
   }
 }
 
-const FOUR_HOURS = 4 * 60 * 60 * 1000;
+const THIRTY_MINUTES = 30 * 60 * 1000;
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 const TEN_MINUTES = 10 * 60 * 1000;
 
 export function startMarketplaceJobs(): void {
-  console.log("[Marketplace] Jobs iniciados (token refresh: 4h, stock sync: 15min, order sync: 10min)");
+  console.log("[Marketplace] Jobs iniciados (token refresh: 30min, stock sync: 15min, order sync: 10min)");
 
-  // Token refresh every 4 hours
-  setInterval(refreshExpiredTokens, FOUR_HOURS);
+  // Token refresh every 30 minutes
+  setInterval(refreshExpiredTokens, THIRTY_MINUTES);
 
   // Stock sync every 15 minutes (local → ML)
   setInterval(syncStockToMarketplaces, FIFTEEN_MINUTES);

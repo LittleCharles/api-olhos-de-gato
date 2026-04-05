@@ -20,9 +20,11 @@ import {
   ListingFiltersSchema,
 } from "../../../application/dtos/MarketplaceDTO.js";
 import { MarketplacePresenter } from "../presenters/MarketplacePresenter.js";
+import { RefreshMarketplaceTokenUseCase } from "../../../application/use-cases/marketplace/RefreshMarketplaceTokenUseCase.js";
 import { MarketplacePlatform } from "../../../domain/enums/index.js";
 import { MercadoLivreProvider } from "../../providers/marketplace/MercadoLivreProvider.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import type { IMarketplaceProvider } from "../../../application/interfaces/IMarketplaceProvider.js";
 
 function getProvider(platform: MarketplacePlatform) {
   switch (platform) {
@@ -30,6 +32,19 @@ function getProvider(platform: MarketplacePlatform) {
       return new MercadoLivreProvider();
     default:
       throw new AppError(`Marketplace ${platform} ainda não suportado`, 400);
+  }
+}
+
+async function ensureFreshToken(accountId: string, provider: IMarketplaceProvider): Promise<void> {
+  const accountsUseCase = container.resolve(ListMarketplaceAccountsUseCase);
+  const accounts = await accountsUseCase.execute();
+  const account = accounts.find((a) => a.id === accountId);
+  if (!account || !account.refreshToken) return;
+
+  if (account.isTokenExpired()) {
+    const refreshUseCase = container.resolve(RefreshMarketplaceTokenUseCase);
+    await refreshUseCase.execute(account, provider);
+    console.log(`[Marketplace] Token renovado antes da operação para ${account.platform}`);
   }
 }
 
