@@ -168,9 +168,6 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
       pictures: imageUrls.length > 0 ? imageUrls : undefined,
       seller_custom_field: product.sku,
       attributes: attributes.length > 0 ? attributes : undefined,
-      sale_terms: [
-        { id: "SALE_FORMAT", value_name: "Unidade" },
-      ],
       shipping,
     };
 
