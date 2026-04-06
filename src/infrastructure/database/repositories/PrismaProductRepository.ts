@@ -72,11 +72,19 @@ export class PrismaProductRepository implements IProductRepository {
     }
 
     if (filters?.animalType) {
-      where.animalType = filters.animalType;
+      where.animalType = { in: [filters.animalType, "AMBOS"] };
     }
 
     if (filters?.subcategoryId) {
       where.subcategories = { some: { id: filters.subcategoryId } };
+    }
+
+    if (filters?.brandId) {
+      where.brandId = filters.brandId;
+    }
+
+    if (filters?.onlyPromo) {
+      where.promoPrice = { not: null };
     }
 
     if (filters?.onlyFeatured) {
@@ -91,13 +99,23 @@ export class PrismaProductRepository implements IProductRepository {
     const limit = pagination?.limit ?? 20;
     const skip = (page - 1) * limit;
 
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case "price-asc": orderBy = { price: "asc" }; break;
+        case "price-desc": orderBy = { price: "desc" }; break;
+        case "name": orderBy = { name: "asc" }; break;
+        case "newest": orderBy = { createdAt: "desc" }; break;
+      }
+    }
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
         include: this.includeRelations,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy,
       }),
       prisma.product.count({ where }),
     ]);
@@ -202,7 +220,7 @@ export class PrismaProductRepository implements IProductRepository {
   async updateStock(id: string, quantity: number): Promise<void> {
     await prisma.product.update({
       where: { id },
-      data: { stock: quantity },
+      data: { stock: { increment: quantity } },
     });
   }
 

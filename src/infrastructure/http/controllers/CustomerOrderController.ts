@@ -30,9 +30,17 @@ export class CustomerOrderController {
     const customerId = await customerOrderController.getCustomerId(request.user.id);
     const data = CustomerCreateOrderSchema.parse(request.body);
 
+    // Fetch user info for email and Stripe
+    const user = await prisma.user.findUnique({
+      where: { id: request.user.id },
+      select: { email: true, name: true },
+    });
+
     const createOrderUseCase = container.resolve(CreateOrderUseCase);
     const order = await createOrderUseCase.execute({
       customerId,
+      customerEmail: user?.email,
+      customerName: user?.name,
       paymentMethod: data.paymentMethod,
       addressId: data.addressId,
       notes: data.notes,
@@ -40,12 +48,6 @@ export class CustomerOrderController {
       shippingCost: data.shippingCost,
       shippingService: data.shippingService,
       shippingDays: data.shippingDays,
-    });
-
-    // Create Stripe Checkout Session
-    const user = await prisma.user.findUnique({
-      where: { id: request.user.id },
-      select: { email: true },
     });
 
     const checkoutItems = order.items.map((item) => ({
