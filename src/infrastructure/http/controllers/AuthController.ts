@@ -2,9 +2,13 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { container } from "tsyringe";
 import { RegisterUseCase } from "../../../application/use-cases/auth/RegisterUseCase.js";
 import { LoginUseCase } from "../../../application/use-cases/auth/LoginUseCase.js";
+import { ForgotPasswordUseCase } from "../../../application/use-cases/auth/ForgotPasswordUseCase.js";
+import { ResetPasswordUseCase } from "../../../application/use-cases/auth/ResetPasswordUseCase.js";
 import {
   RegisterSchema,
   LoginSchema,
+  ForgotPasswordSchema,
+  ResetPasswordSchema,
 } from "../../../application/dtos/AuthDTO.js";
 
 export class AuthController {
@@ -40,5 +44,23 @@ export class AuthController {
       user: result.user,
       token,
     });
+  }
+
+  async forgotPassword(request: FastifyRequest, reply: FastifyReply) {
+    const data = ForgotPasswordSchema.parse(request.body);
+
+    const forgotPasswordUseCase = container.resolve(ForgotPasswordUseCase);
+    const result = await forgotPasswordUseCase.execute(data);
+
+    return reply.send(result);
+  }
+
+  async resetPassword(request: FastifyRequest, reply: FastifyReply) {
+    const data = ResetPasswordSchema.parse(request.body);
+
+    const resetPasswordUseCase = container.resolve(ResetPasswordUseCase);
+    const result = await resetPasswordUseCase.execute(data);
+
+    return reply.send(result);
   }
 }

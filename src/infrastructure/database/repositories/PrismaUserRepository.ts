@@ -17,6 +17,12 @@ export class PrismaUserRepository implements IUserRepository {
     return this.mapToEntity(user);
   }
 
+  async findByResetToken(token: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({ where: { resetToken: token } });
+    if (!user) return null;
+    return this.mapToEntity(user);
+  }
+
   async create(user: User): Promise<User> {
     const created = await prisma.user.create({
       data: {
@@ -47,6 +53,9 @@ export class PrismaUserRepository implements IUserRepository {
       data: {
         name: user.name,
         phone: user.phone,
+        passwordHash: user.passwordHash,
+        resetToken: user.resetToken ?? null,
+        resetTokenExpiry: user.resetTokenExpiry ?? null,
       },
     });
     return this.mapToEntity(updated);
@@ -64,6 +73,8 @@ export class PrismaUserRepository implements IUserRepository {
       name: data.name,
       role: data.role as UserRole,
       phone: data.phone,
+      resetToken: data.resetToken,
+      resetTokenExpiry: data.resetTokenExpiry,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });

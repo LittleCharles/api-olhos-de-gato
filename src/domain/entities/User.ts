@@ -8,6 +8,8 @@ export interface UserProps {
   name: string;
   role: UserRole;
   phone?: string | null;
+  resetToken?: string | null;
+  resetTokenExpiry?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +45,14 @@ export class User {
     return this.props.phone;
   }
 
+  get resetToken(): string | null | undefined {
+    return this.props.resetToken;
+  }
+
+  get resetTokenExpiry(): Date | null | undefined {
+    return this.props.resetTokenExpiry;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -67,5 +77,22 @@ export class User {
   updatePhone(phone: string): void {
     this.props.phone = phone;
     this.props.updatedAt = new Date();
+  }
+
+  setResetToken(token: string, expiry: Date): void {
+    this.props.resetToken = token;
+    this.props.resetTokenExpiry = expiry;
+    this.props.updatedAt = new Date();
+  }
+
+  clearResetToken(): void {
+    this.props.resetToken = null;
+    this.props.resetTokenExpiry = null;
+    this.props.updatedAt = new Date();
+  }
+
+  updatePasswordHash(hash: string): void {
+    this.props.passwordHash = hash;
+    this.clearResetToken();
   }
 }

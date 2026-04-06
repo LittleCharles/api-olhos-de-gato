@@ -85,8 +85,10 @@ model User {
   passwordHash String   @map("password_hash")
   name         String
   role         UserRole @default(CUSTOMER)
-  phone        String?
-  isActive     Boolean  @default(true) @map("is_active")
+  phone             String?
+  isActive          Boolean   @default(true) @map("is_active")
+  resetToken        String?   @unique @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -301,6 +303,9 @@ model StoreSettings {
   socialInstagram          String   @default("") @map("social_instagram")
   socialFacebook           String   @default("") @map("social_facebook")
   socialTiktok             String   @default("") @map("social_tiktok")
+  socialMercadoLivre       String   @default("") @map("social_mercado_livre")
+  socialShopee             String   @default("") @map("social_shopee")
+  socialAmazon             String   @default("") @map("social_amazon")
   updatedAt                DateTime @updatedAt @map("updated_at")
 
   @@map("store_settings")

@@ -35,6 +35,8 @@ export async function publicRoutes(app: FastifyInstance) {
   // Auth
   app.post("/auth/register", authController.register);
   app.post("/auth/login", authController.login);
+  app.post("/auth/forgot-password", authController.forgotPassword);
+  app.post("/auth/reset-password", authController.resetPassword);
 
   // Products (public)
   app.get("/products", productController.list);
