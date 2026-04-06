@@ -17,6 +17,9 @@ export interface StoreSettingsProps {
   socialInstagram: string;
   socialFacebook: string;
   socialTiktok: string;
+  socialMercadoLivre: string;
+  socialShopee: string;
+  socialAmazon: string;
   updatedAt: Date;
 }
 
@@ -43,6 +46,9 @@ export class StoreSettings {
   get socialInstagram(): string { return this.props.socialInstagram; }
   get socialFacebook(): string { return this.props.socialFacebook; }
   get socialTiktok(): string { return this.props.socialTiktok; }
+  get socialMercadoLivre(): string { return this.props.socialMercadoLivre; }
+  get socialShopee(): string { return this.props.socialShopee; }
+  get socialAmazon(): string { return this.props.socialAmazon; }
   get updatedAt(): Date { return this.props.updatedAt; }
 
   update(data: Partial<Omit<StoreSettingsProps, "id" | "updatedAt" | "shippingFreeAbove" | "shippingBasePrice">> & {
@@ -64,6 +70,9 @@ export class StoreSettings {
     if (data.socialInstagram !== undefined) this.props.socialInstagram = data.socialInstagram;
     if (data.socialFacebook !== undefined) this.props.socialFacebook = data.socialFacebook;
     if (data.socialTiktok !== undefined) this.props.socialTiktok = data.socialTiktok;
+    if (data.socialMercadoLivre !== undefined) this.props.socialMercadoLivre = data.socialMercadoLivre;
+    if (data.socialShopee !== undefined) this.props.socialShopee = data.socialShopee;
+    if (data.socialAmazon !== undefined) this.props.socialAmazon = data.socialAmazon;
     this.props.updatedAt = new Date();
   }
 }

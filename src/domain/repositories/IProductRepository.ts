@@ -9,8 +9,11 @@ export interface ProductFilters {
   isActive?: boolean;
   onlyActive?: boolean;
   onlyInStock?: boolean;
+  onlyPromo?: boolean;
   animalType?: AnimalType;
   subcategoryId?: string;
+  brandId?: string;
+  sortBy?: "newest" | "price-asc" | "price-desc" | "name";
   onlyFeatured?: boolean;
   onlyRecommended?: boolean;
 }

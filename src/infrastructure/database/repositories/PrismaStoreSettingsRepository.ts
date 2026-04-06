@@ -28,6 +28,9 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
           socialInstagram: "",
           socialFacebook: "",
           socialTiktok: "",
+          socialMercadoLivre: "",
+          socialShopee: "",
+          socialAmazon: "",
         },
       });
     }
@@ -54,6 +57,9 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
         socialInstagram: settings.socialInstagram,
         socialFacebook: settings.socialFacebook,
         socialTiktok: settings.socialTiktok,
+        socialMercadoLivre: settings.socialMercadoLivre,
+        socialShopee: settings.socialShopee,
+        socialAmazon: settings.socialAmazon,
       },
     });
 
@@ -78,6 +84,9 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
       socialInstagram: data.socialInstagram,
       socialFacebook: data.socialFacebook,
       socialTiktok: data.socialTiktok,
+      socialMercadoLivre: data.socialMercadoLivre,
+      socialShopee: data.socialShopee,
+      socialAmazon: data.socialAmazon,
       updatedAt: data.updatedAt,
     });
   }

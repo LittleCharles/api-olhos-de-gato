@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { ProductController } from "../controllers/ProductController.js";
 import { AuthController } from "../controllers/AuthController.js";
 import { SubcategoryController } from "../controllers/SubcategoryController.js";
+import { BrandController } from "../controllers/BrandController.js";
 import { SettingsController } from "../controllers/SettingsController.js";
 import { ReviewController } from "../controllers/ReviewController.js";
 import { ProfileController } from "../controllers/ProfileController.js";
@@ -21,6 +22,7 @@ import { UserRole } from "../../../domain/enums/index.js";
 const productController = new ProductController();
 const authController = new AuthController();
 const subcategoryController = new SubcategoryController();
+const brandController = new BrandController();
 const settingsController = new SettingsController();
 const reviewController = new ReviewController();
 const profileController = new ProfileController();
@@ -47,6 +49,9 @@ export async function publicRoutes(app: FastifyInstance) {
 
   // Categories (public)
   app.get("/categories", subcategoryController.list);
+
+  // Brands (public)
+  app.get("/brands", brandController.list);
 
   // Store settings (public)
   app.get("/settings", settingsController.get);

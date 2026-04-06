@@ -16,6 +16,9 @@ export const UpdateStoreSettingsSchema = z.object({
   socialInstagram: z.string().optional(),
   socialFacebook: z.string().optional(),
   socialTiktok: z.string().optional(),
+  socialMercadoLivre: z.string().optional(),
+  socialShopee: z.string().optional(),
+  socialAmazon: z.string().optional(),
 });
 
 export type UpdateStoreSettingsDTO = z.infer<typeof UpdateStoreSettingsSchema>;

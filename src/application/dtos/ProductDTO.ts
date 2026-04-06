@@ -68,8 +68,11 @@ export const ProductFiltersSchema = z.object({
     z.boolean(),
   ),
   onlyInStock: queryBool,
+  onlyPromo: queryBool,
   animalType: z.nativeEnum(AnimalType).optional(),
   subcategoryId: z.string().optional(),
+  brandId: z.string().uuid().optional(),
+  sortBy: z.enum(["newest", "price-asc", "price-desc", "name"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
