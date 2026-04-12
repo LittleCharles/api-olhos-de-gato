@@ -34,11 +34,14 @@ const supportTicketController = new SupportTicketController();
 const shippingController = new ShippingController();
 
 export async function publicRoutes(app: FastifyInstance) {
-  // Auth
-  app.post("/auth/register", authController.register);
-  app.post("/auth/login", authController.login);
-  app.post("/auth/forgot-password", authController.forgotPassword);
-  app.post("/auth/reset-password", authController.resetPassword);
+  // Auth (stricter rate limiting)
+  const authRateLimit = {
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+  };
+  app.post("/auth/register", authRateLimit, authController.register);
+  app.post("/auth/login", authRateLimit, authController.login);
+  app.post("/auth/forgot-password", authRateLimit, authController.forgotPassword);
+  app.post("/auth/reset-password", authRateLimit, authController.resetPassword);
 
   // Products (public)
   app.get("/products", productController.list);

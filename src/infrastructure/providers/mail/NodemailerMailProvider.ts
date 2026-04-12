@@ -17,15 +17,11 @@ export class NodemailerMailProvider implements IMailProvider {
   }
 
   async send(data: SendMailData): Promise<void> {
-    try {
-      await this.transporter.sendMail({
-        from: process.env.MAIL_FROM || "Olhos de Gato <noreply@olhosdegato.com.br>",
-        to: data.to,
-        subject: data.subject,
-        html: data.html,
-      });
-    } catch (error) {
-      console.error("Erro ao enviar email:", error);
-    }
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM || "Olhos de Gato <noreply@olhosdegato.com.br>",
+      to: data.to,
+      subject: data.subject,
+      html: data.html,
+    });
   }
 }

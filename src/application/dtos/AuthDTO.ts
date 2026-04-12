@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const RegisterSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
   name: z.string().min(2).max(100),
   phone: z.string().optional(),
 });
@@ -18,7 +18,7 @@ export const ForgotPasswordSchema = z.object({
 
 export const ResetPasswordSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(6),
+  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
 });
 
 export type RegisterDTO = z.infer<typeof RegisterSchema>;

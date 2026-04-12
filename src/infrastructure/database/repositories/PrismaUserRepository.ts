@@ -73,6 +73,7 @@ export class PrismaUserRepository implements IUserRepository {
       name: data.name,
       role: data.role as UserRole,
       phone: data.phone,
+      isActive: data.isActive ?? true,
       resetToken: data.resetToken,
       resetTokenExpiry: data.resetTokenExpiry,
       createdAt: data.createdAt,

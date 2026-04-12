@@ -10,16 +10,16 @@ import {
   CreateReviewSchema,
 } from "../../../application/dtos/CustomerOrderDTO.js";
 import { OrderPresenter } from "../presenters/OrderPresenter.js";
-import { prisma } from "../../database/prisma/client.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { stripeService } from "../../services/StripeService.js";
+import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
 
 export class CustomerOrderController {
   private async getCustomerId(userId: string): Promise<string> {
-    const customer = await prisma.customer.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
+    const customerRepo = container.resolve<ICustomerRepository>("CustomerRepository");
+    const customer = await customerRepo.findByUserId(userId);
     if (!customer) {
       throw new AppError("Perfil de cliente não encontrado", 404);
     }
@@ -31,15 +31,13 @@ export class CustomerOrderController {
     const data = CustomerCreateOrderSchema.parse(request.body);
 
     // Fetch user info for email and Stripe
-    const user = await prisma.user.findUnique({
-      where: { id: request.user.id },
-      select: { email: true, name: true },
-    });
+    const userRepo = container.resolve<IUserRepository>("UserRepository");
+    const user = await userRepo.findById(request.user.id);
 
     const createOrderUseCase = container.resolve(CreateOrderUseCase);
     const order = await createOrderUseCase.execute({
       customerId,
-      customerEmail: user?.email,
+      customerEmail: user?.email?.getValue(),
       customerName: user?.name,
       paymentMethod: data.paymentMethod,
       addressId: data.addressId,
@@ -69,14 +67,12 @@ export class CustomerOrderController {
     const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
       orderId: order.id,
       items: checkoutItems,
-      customerEmail: user?.email,
+      customerEmail: user?.email?.getValue(),
     });
 
     // Save stripe session id on order
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { stripeSessionId: sessionId },
-    });
+    const orderRepo = container.resolve<IOrderRepository>("OrderRepository");
+    await orderRepo.updateStripeSessionId(order.id, sessionId);
 
     return reply.status(201).send({
       ...OrderPresenter.toHTTP(order),

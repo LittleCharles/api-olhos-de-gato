@@ -28,5 +28,6 @@ export interface IOrderRepository {
     notes?: string,
   ): Promise<void>;
   updateTrackingCode(id: string, trackingCode: string): Promise<void>;
+  updateStripeSessionId(id: string, sessionId: string): Promise<void>;
   findByIdWithDetails(id: string): Promise<any>;
 }

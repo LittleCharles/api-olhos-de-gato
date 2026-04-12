@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify";
+import { container } from "tsyringe";
 import { stripeService } from "../../services/StripeService.js";
-import { prisma } from "../../database/prisma/client.js";
+import { HandleStripeWebhookUseCase } from "../../../application/use-cases/order/HandleStripeWebhookUseCase.js";
 
 export class WebhookController {
   async stripeWebhook(request: FastifyRequest, reply: FastifyReply) {
@@ -20,64 +21,12 @@ export class WebhookController {
         signature,
       );
 
-      switch (event.type) {
-        case "checkout.session.completed": {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
+      const session = event.data.object as { metadata?: { orderId?: string } };
+      const orderId = session.metadata?.orderId;
 
-          if (orderId) {
-            await prisma.order.update({
-              where: { id: orderId },
-              data: {
-                paymentStatus: "PAID",
-                status: "CONFIRMED",
-              },
-            });
-          }
-          break;
-        }
-
-        case "checkout.session.async_payment_succeeded": {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
-
-          if (orderId) {
-            await prisma.order.update({
-              where: { id: orderId },
-              data: {
-                paymentStatus: "PAID",
-                status: "CONFIRMED",
-              },
-            });
-          }
-          break;
-        }
-
-        case "checkout.session.async_payment_failed": {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
-
-          if (orderId) {
-            await prisma.order.update({
-              where: { id: orderId },
-              data: { paymentStatus: "FAILED" },
-            });
-          }
-          break;
-        }
-
-        case "checkout.session.expired": {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
-
-          if (orderId) {
-            await prisma.order.update({
-              where: { id: orderId },
-              data: { paymentStatus: "FAILED" },
-            });
-          }
-          break;
-        }
+      if (orderId) {
+        const handleWebhook = container.resolve(HandleStripeWebhookUseCase);
+        await handleWebhook.execute({ eventType: event.type, orderId });
       }
 
       return reply.send({ received: true });

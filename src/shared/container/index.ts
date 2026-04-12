@@ -67,6 +67,9 @@ import { NodemailerMailProvider } from "../../infrastructure/providers/mail/Node
 import { IShippingProvider } from "../../application/interfaces/IShippingProvider.js";
 import { MelhorEnvioProvider } from "../../infrastructure/providers/shipping/MelhorEnvioProvider.js";
 
+import { IMarketplaceProvider } from "../../application/interfaces/IMarketplaceProvider.js";
+import { MercadoLivreProvider } from "../../infrastructure/providers/marketplace/MercadoLivreProvider.js";
+
 // Register Repositories
 container.registerSingleton<IUserRepository>(
   "UserRepository",
@@ -143,5 +146,6 @@ const storageProvider = process.env.STORAGE_PROVIDER === "r2" ? R2StorageProvide
 container.registerSingleton<IStorageProvider>("StorageProvider", storageProvider);
 container.registerSingleton<IMailProvider>("MailProvider", NodemailerMailProvider);
 container.registerSingleton<IShippingProvider>("ShippingProvider", MelhorEnvioProvider);
+container.registerSingleton<IMarketplaceProvider>("MarketplaceProvider", MercadoLivreProvider);
 
 export { container };

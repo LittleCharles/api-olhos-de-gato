@@ -27,6 +27,23 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     return this.mapToEntity(customer);
   }
 
+  async findByUserId(userId: string): Promise<Customer | null> {
+    const customer = await prisma.customer.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        orders: {
+          select: { total: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        },
+        addresses: true,
+      },
+    });
+
+    if (!customer) return null;
+    return this.mapToEntity(customer);
+  }
+
   async findAll(
     filters?: CustomerFilters,
     pagination?: PaginationParams,

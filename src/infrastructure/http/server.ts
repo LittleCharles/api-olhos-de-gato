@@ -6,6 +6,8 @@ import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -20,50 +22,63 @@ export async function buildServer() {
   // Raw body for Stripe webhooks (must be registered first)
   await app.register(rawBody, { field: "rawBody", global: true, runFirst: true });
 
+  // Security headers
+  await app.register(helmet, {
+    contentSecurityPolicy: false, // Disable CSP for API (no HTML served)
+  });
+
+  // Global rate limiting
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+  });
+
   // Zod Type Provider Configuration
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // Swagger Documentation
-  await app.register(swagger, {
-    openapi: {
-      info: {
-        title: "Petshop API",
-        description: "API RESTful para sistema de Petshop",
-        version: "1.0.0",
-      },
-      servers: [
-        { url: "https://api.olhosdegato.com.br", description: "Produção" },
-        { url: "http://localhost:3333", description: "Desenvolvimento" },
-      ],
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: "http",
-            scheme: "bearer",
-            bearerFormat: "JWT",
+  // Swagger Documentation (only in non-production)
+  if (process.env.NODE_ENV !== "production") {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: "Petshop API",
+          description: "API RESTful para sistema de Petshop",
+          version: "1.0.0",
+        },
+        servers: [
+          { url: "https://api.olhosdegato.com.br", description: "Produção" },
+          { url: "http://localhost:3333", description: "Desenvolvimento" },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
           },
         },
       },
-    },
-    transform: jsonSchemaTransform,
-  });
+      transform: jsonSchemaTransform,
+    });
 
-  await app.register(swaggerUi, {
-    routePrefix: "/docs",
-    uiConfig: {
-      docExpansion: "list",
-      deepLinking: false,
-    },
-  });
+    await app.register(swaggerUi, {
+      routePrefix: "/docs",
+      uiConfig: {
+        docExpansion: "list",
+        deepLinking: false,
+      },
+    });
+  }
 
-  // Plugins
+  // CORS
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN === "true"
         ? true
         : process.env.CORS_ORIGIN.split(",").map(s => s.trim())
-      : true,
+      : ["http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
@@ -80,9 +95,12 @@ export async function buildServer() {
     decorateReply: false,
   });
 
-  await app.register(jwt, {
-    secret: process.env.JWT_SECRET || "default-secret",
-  });
+  // JWT - fail fast if secret is missing
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET environment variable is required");
+  }
+  await app.register(jwt, { secret: jwtSecret });
 
   // Error handler
   app.setErrorHandler(errorHandler);

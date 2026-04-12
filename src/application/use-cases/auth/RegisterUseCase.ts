@@ -45,6 +45,7 @@ export class RegisterUseCase {
       name: data.name,
       role: UserRole.CUSTOMER,
       phone: data.phone,
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

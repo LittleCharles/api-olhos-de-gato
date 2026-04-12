@@ -3,7 +3,7 @@ import { container } from "tsyringe";
 import { ListMarketplaceAccountsUseCase } from "../../../application/use-cases/marketplace/ListMarketplaceAccountsUseCase.js";
 import { SyncMLOrdersUseCase } from "../../../application/use-cases/marketplace/SyncMLOrdersUseCase.js";
 import { MarketplacePlatform } from "../../../domain/enums/index.js";
-import { MercadoLivreProvider } from "../../providers/marketplace/MercadoLivreProvider.js";
+import type { IMarketplaceProvider } from "../../../application/interfaces/IMarketplaceProvider.js";
 
 interface MLNotification {
   resource: string;
@@ -42,7 +42,7 @@ export class MarketplaceWebhookController {
         return;
       }
 
-      const provider = new MercadoLivreProvider();
+      const provider = container.resolve<IMarketplaceProvider>("MarketplaceProvider");
       const syncUseCase = container.resolve(SyncMLOrdersUseCase);
       const result = await syncUseCase.execute(provider, account.id);
 

@@ -41,6 +41,10 @@ export class LoginUseCase {
       throw new AppError("Email ou senha inválidos", 401);
     }
 
+    if (!user.isActive) {
+      throw new AppError("Sua conta foi desativada", 403);
+    }
+
     return {
       user: {
         id: user.id,

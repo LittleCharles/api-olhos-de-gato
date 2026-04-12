@@ -35,5 +35,5 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 3333
 
-# Rodar migrations e iniciar servidor
-CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
+# Run safe migrations and start server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]

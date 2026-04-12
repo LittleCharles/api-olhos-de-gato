@@ -8,6 +8,7 @@ export interface UserProps {
   name: string;
   role: UserRole;
   phone?: string | null;
+  isActive: boolean;
   resetToken?: string | null;
   resetTokenExpiry?: Date | null;
   createdAt: Date;
@@ -43,6 +44,10 @@ export class User {
 
   get phone(): string | null | undefined {
     return this.props.phone;
+  }
+
+  get isActive(): boolean {
+    return this.props.isActive;
   }
 
   get resetToken(): string | null | undefined {

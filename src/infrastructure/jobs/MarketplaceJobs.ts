@@ -4,14 +4,12 @@ import { RefreshMarketplaceTokenUseCase } from "../../application/use-cases/mark
 import { SyncStockUseCase } from "../../application/use-cases/marketplace/SyncStockUseCase.js";
 import { SyncMLOrdersUseCase } from "../../application/use-cases/marketplace/SyncMLOrdersUseCase.js";
 import { MarketplacePlatform } from "../../domain/enums/index.js";
-import { MercadoLivreProvider } from "../providers/marketplace/MercadoLivreProvider.js";
 import type { IMarketplaceProvider } from "../../application/interfaces/IMarketplaceProvider.js";
-import type { MarketplaceAccount } from "../../domain/entities/MarketplaceAccount.js";
 
 function getProvider(platform: MarketplacePlatform): IMarketplaceProvider {
   switch (platform) {
     case MarketplacePlatform.MERCADO_LIVRE:
-      return new MercadoLivreProvider();
+      return container.resolve<IMarketplaceProvider>("MarketplaceProvider");
     default:
       throw new Error(`Provider não suportado: ${platform}`);
   }

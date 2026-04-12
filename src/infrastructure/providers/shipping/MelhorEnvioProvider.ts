@@ -6,7 +6,7 @@ import type {
 } from "../../../application/interfaces/IShippingProvider.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 
-const STORE_CEP = "18040000"; // CEP da loja em Sorocaba
+const STORE_CEP = process.env.STORE_CEP || "18040000";
 
 const FRIENDLY_NAMES: Record<string, string> = {
   ".Package": "Jadlog Package",
@@ -70,8 +70,6 @@ export class MelhorEnvioProvider implements IShippingProvider {
       ],
     };
 
-    console.log("MelhorEnvio request:", JSON.stringify(body));
-
     try {
       const response = await fetch(
         `${this.baseUrl}/api/v2/me/shipment/calculate`,
@@ -87,14 +85,12 @@ export class MelhorEnvioProvider implements IShippingProvider {
         },
       );
 
-      const responseText = await response.text();
-      console.log("MelhorEnvio response:", response.status, responseText);
-
       if (!response.ok) {
-        throw new AppError(`Erro ao calcular frete: ${responseText}`, 502);
+        const errorText = await response.text();
+        throw new AppError(`Erro ao calcular frete: ${errorText}`, 502);
       }
 
-      const data = JSON.parse(responseText) as any[];
+      const data = await response.json() as any[];
 
       const options: ShippingOption[] = [];
 

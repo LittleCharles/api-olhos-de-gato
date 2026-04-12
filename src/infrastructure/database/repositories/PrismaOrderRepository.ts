@@ -269,6 +269,13 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
+  async updateStripeSessionId(id: string, sessionId: string): Promise<void> {
+    await prisma.order.update({
+      where: { id },
+      data: { stripeSessionId: sessionId },
+    });
+  }
+
   private mapToEntity(data: any): Order {
     const items: OrderItemProps[] = (data.items || []).map((item: any) => ({
       id: item.id,
