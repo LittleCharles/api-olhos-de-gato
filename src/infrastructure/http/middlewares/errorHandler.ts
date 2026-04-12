@@ -20,15 +20,19 @@ export function errorHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  const requestId = request.id;
+
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({
       error: error.message,
+      requestId,
     });
   }
 
   if (error instanceof DomainError) {
     return reply.status(400).send({
       error: error.message,
+      requestId,
     });
   }
 
@@ -39,6 +43,7 @@ export function errorHandler(
         field: e.path.join("."),
         message: e.message,
       })),
+      requestId,
     });
   }
 
@@ -48,25 +53,81 @@ export function errorHandler(
       const field = formatConstraintField(target);
       return reply.status(409).send({
         error: `Já existe um registro com este ${field}`,
+        requestId,
       });
     }
 
     if (error.code === "P2003") {
       return reply.status(400).send({
         error: "Referência inválida: o registro relacionado não existe",
+        requestId,
       });
     }
 
     if (error.code === "P2025") {
       return reply.status(404).send({
         error: "Registro não encontrado",
+        requestId,
       });
     }
   }
 
-  console.error("Unexpected error:", error);
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    request.log.error(
+      { err: error, reqId: requestId, code: "DB_INIT_FAILED" },
+      "DB initialization failed",
+    );
+    return reply.status(503).send({
+      error: "Serviço temporariamente indisponível",
+      code: "DB_INIT_FAILED",
+      requestId,
+    });
+  }
+
+  if (error instanceof Prisma.PrismaClientValidationError) {
+    request.log.error(
+      { err: error, reqId: requestId, code: "DB_QUERY_INVALID" },
+      "Invalid Prisma query",
+    );
+    return reply.status(500).send({
+      error: "Erro interno do servidor",
+      code: "DB_QUERY_INVALID",
+      requestId,
+    });
+  }
+
+  if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+    request.log.error(
+      { err: error, reqId: requestId, code: "DB_UNKNOWN_ERROR" },
+      "Unknown Prisma error",
+    );
+    return reply.status(500).send({
+      error: "Erro interno do servidor",
+      code: "DB_UNKNOWN_ERROR",
+      requestId,
+    });
+  }
+
+  if (error instanceof Prisma.PrismaClientRustPanicError) {
+    request.log.error(
+      { err: error, reqId: requestId, code: "DB_PANIC" },
+      "Prisma Rust panic",
+    );
+    return reply.status(500).send({
+      error: "Erro interno do servidor",
+      code: "DB_PANIC",
+      requestId,
+    });
+  }
+
+  request.log.error(
+    { err: error, reqId: requestId, code: "UNEXPECTED" },
+    "Unexpected error",
+  );
 
   return reply.status(500).send({
     error: "Erro interno do servidor",
+    code: "UNEXPECTED",
+    requestId,
   });
 }
