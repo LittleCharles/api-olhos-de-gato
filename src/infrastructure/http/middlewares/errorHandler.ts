@@ -124,6 +124,8 @@ export function errorHandler(
     { err: error, reqId: requestId, code: "UNEXPECTED" },
     "Unexpected error",
   );
+  // Backup com stack completo caso o serializer do logger colapse o payload
+  console.error(`[reqId=${requestId}] Unexpected error:`, error);
 
   return reply.status(500).send({
     error: "Erro interno do servidor",

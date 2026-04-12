@@ -94,6 +94,13 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 const TEN_MINUTES = 10 * 60 * 1000;
 
 export function startMarketplaceJobs(): void {
+  // Sem credenciais ML configuradas, os jobs não têm o que fazer — evita
+  // chamadas HTTP quebradas e ruído no log.
+  if (!process.env.ML_APP_ID || !process.env.ML_CLIENT_SECRET) {
+    console.log("[Marketplace] ML_APP_ID/ML_CLIENT_SECRET não configurados — jobs desativados");
+    return;
+  }
+
   console.log("[Marketplace] Jobs iniciados (token refresh: 30min, stock sync: 15min, order sync: 10min)");
 
   // Token refresh every 30 minutes
