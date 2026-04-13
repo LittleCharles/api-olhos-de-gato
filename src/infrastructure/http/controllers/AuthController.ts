@@ -11,6 +11,18 @@ import {
   ResetPasswordSchema,
 } from "../../../application/dtos/AuthDTO.js";
 
+const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
+
+function setAuthCookie(reply: FastifyReply, token: string) {
+  reply.setCookie("auth_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SEVEN_DAYS_SECONDS,
+  });
+}
+
 export class AuthController {
   async register(request: FastifyRequest, reply: FastifyReply) {
     const data = RegisterSchema.parse(request.body);
@@ -23,10 +35,9 @@ export class AuthController {
       { expiresIn: "7d" },
     );
 
-    return reply.status(201).send({
-      user: result.user,
-      token,
-    });
+    setAuthCookie(reply, token);
+
+    return reply.status(201).send({ user: result.user });
   }
 
   async login(request: FastifyRequest, reply: FastifyReply) {
@@ -40,10 +51,14 @@ export class AuthController {
       { expiresIn: "7d" },
     );
 
-    return reply.send({
-      user: result.user,
-      token,
-    });
+    setAuthCookie(reply, token);
+
+    return reply.send({ user: result.user });
+  }
+
+  async logout(_request: FastifyRequest, reply: FastifyReply) {
+    reply.clearCookie("auth_token", { path: "/" });
+    return reply.send({ ok: true });
   }
 
   async forgotPassword(request: FastifyRequest, reply: FastifyReply) {

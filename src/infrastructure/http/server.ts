@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import rawBody from "fastify-raw-body";
 import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
@@ -100,7 +101,11 @@ export async function buildServer() {
   if (!jwtSecret) {
     throw new Error("JWT_SECRET environment variable is required");
   }
-  await app.register(jwt, { secret: jwtSecret });
+  await app.register(cookie);
+  await app.register(jwt, {
+    secret: jwtSecret,
+    cookie: { cookieName: "auth_token", signed: false },
+  });
 
   // Error handler
   app.setErrorHandler(errorHandler);
