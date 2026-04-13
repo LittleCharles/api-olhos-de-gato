@@ -14,10 +14,11 @@ import {
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
 
 function setAuthCookie(reply: FastifyReply, token: string) {
+  const isProd = process.env.NODE_ENV === "production";
   reply.setCookie("auth_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: SEVEN_DAYS_SECONDS,
   });
@@ -57,7 +58,12 @@ export class AuthController {
   }
 
   async logout(_request: FastifyRequest, reply: FastifyReply) {
-    reply.clearCookie("auth_token", { path: "/" });
+    const isProd = process.env.NODE_ENV === "production";
+    reply.clearCookie("auth_token", {
+      path: "/",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+    });
     return reply.send({ ok: true });
   }
 
