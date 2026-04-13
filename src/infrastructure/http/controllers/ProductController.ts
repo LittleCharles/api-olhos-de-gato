@@ -16,6 +16,7 @@ import { ToggleFeaturedUseCase } from "../../../application/use-cases/product/To
 import { ToggleRecommendedUseCase } from "../../../application/use-cases/product/ToggleRecommendedUseCase.js";
 import { GetFeaturedProductsUseCase } from "../../../application/use-cases/product/GetFeaturedProductsUseCase.js";
 import { GetRecommendedProductsUseCase } from "../../../application/use-cases/product/GetRecommendedProductsUseCase.js";
+import { GetRelatedProductsUseCase } from "../../../application/use-cases/product/GetRelatedProductsUseCase.js";
 import { ProductPresenter } from "../presenters/ProductPresenter.js";
 
 export class ProductController {
@@ -130,5 +131,18 @@ export class ProductController {
     const products = await useCase.execute(limit);
 
     return reply.send(products.map(ProductPresenter.toHTTP));
+  }
+
+  async related(
+    request: FastifyRequest<{ Params: { id: string }; Querystring: { limit?: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { id } = request.params;
+    const limit = request.query.limit ? Number(request.query.limit) : undefined;
+
+    const useCase = container.resolve(GetRelatedProductsUseCase);
+    const products = await useCase.execute(id, limit);
+
+    return reply.send({ data: products.map(ProductPresenter.toHTTP) });
   }
 }

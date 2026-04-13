@@ -22,6 +22,22 @@ export class UploadProductImagesUseCase {
       throw new AppError("Produto não encontrado", 404);
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    for (const file of files) {
+      if (file.buffer.length > MAX_FILE_SIZE) {
+        throw new AppError(
+          `Imagem "${file.filename}" excede o limite de 5MB`,
+          400,
+        );
+      }
+      if (!file.mimetype.startsWith("image/")) {
+        throw new AppError(
+          `Arquivo "${file.filename}" não é uma imagem válida`,
+          400,
+        );
+      }
+    }
+
     const existingImages = await prisma.productImage.count({
       where: { productId },
     });

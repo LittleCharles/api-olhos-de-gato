@@ -40,6 +40,7 @@ export async function publicRoutes(app: FastifyInstance) {
   };
   app.post("/auth/register", authRateLimit, authController.register);
   app.post("/auth/login", authRateLimit, authController.login);
+  app.post("/auth/logout", authController.logout);
   app.post("/auth/forgot-password", authRateLimit, authController.forgotPassword);
   app.post("/auth/reset-password", authRateLimit, authController.resetPassword);
 
@@ -48,6 +49,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.get("/products/featured", productController.featured);
   app.get("/products/recommended", productController.recommended);
   app.get("/products/:id", productController.get);
+  app.get("/products/:id/related", productController.related);
   app.get("/products/:id/reviews", reviewController.listPublic);
 
   // Categories (public)

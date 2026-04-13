@@ -177,42 +177,44 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async update(product: Product): Promise<Product> {
-    await prisma.productSpecification.deleteMany({ where: { productId: product.id } });
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.productSpecification.deleteMany({ where: { productId: product.id } });
 
-    const updated = await prisma.product.update({
-      where: { id: product.id },
-      data: {
-        categoryId: product.categoryId,
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        price: product.price.getValue(),
-        stock: product.stock,
-        isActive: product.isActive,
-        animalType: product.animalType,
-        subcategories: { set: product.subcategoryIds.map(id => ({ id })) },
-        promoPrice: product.promoPrice?.getValue() ?? null,
-        sku: product.sku,
-        isFeatured: product.isFeatured,
-        isRecommended: product.isRecommended,
-        brandId: product.brandId,
-        ean: product.ean,
-        weight: product.weight,
-        lengthCm: product.lengthCm,
-        widthCm: product.widthCm,
-        heightCm: product.heightCm,
-        countryOrigin: product.countryOrigin,
-        manufacturer: product.manufacturer,
-        bulletPoints: product.bulletPoints,
-        specifications: {
-          create: product.specifications.map((s, i) => ({
-            label: s.label,
-            value: s.value,
-            order: i,
-          })),
+      return tx.product.update({
+        where: { id: product.id },
+        data: {
+          categoryId: product.categoryId,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          price: product.price.getValue(),
+          stock: product.stock,
+          isActive: product.isActive,
+          animalType: product.animalType,
+          subcategories: { set: product.subcategoryIds.map(id => ({ id })) },
+          promoPrice: product.promoPrice?.getValue() ?? null,
+          sku: product.sku,
+          isFeatured: product.isFeatured,
+          isRecommended: product.isRecommended,
+          brandId: product.brandId,
+          ean: product.ean,
+          weight: product.weight,
+          lengthCm: product.lengthCm,
+          widthCm: product.widthCm,
+          heightCm: product.heightCm,
+          countryOrigin: product.countryOrigin,
+          manufacturer: product.manufacturer,
+          bulletPoints: product.bulletPoints,
+          specifications: {
+            create: product.specifications.map((s, i) => ({
+              label: s.label,
+              value: s.value,
+              order: i,
+            })),
+          },
         },
-      },
-      include: this.includeRelations,
+        include: this.includeRelations,
+      });
     });
     return this.mapToEntity(updated);
   }
@@ -246,6 +248,61 @@ export class PrismaProductRepository implements IProductRepository {
       take: limit ?? 10,
     });
     return products.map((p) => this.mapToEntity(p));
+  }
+
+  async findRelated(productId: string, limit?: number): Promise<Product[]> {
+    const target = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { subcategories: { select: { id: true } } },
+    });
+    if (!target) return [];
+
+    const subcategoryIds = target.subcategories.map((s) => s.id);
+    const animalCandidates: AnimalType[] =
+      target.animalType === AnimalType.AMBOS
+        ? [AnimalType.GATO, AnimalType.CACHORRO, AnimalType.AMBOS]
+        : [target.animalType as AnimalType, AnimalType.AMBOS];
+
+    const orClauses: Prisma.ProductWhereInput[] = [
+      { animalType: { in: animalCandidates } },
+    ];
+    if (subcategoryIds.length > 0) {
+      orClauses.push({
+        subcategories: { some: { id: { in: subcategoryIds } } },
+      });
+    }
+    if (target.brandId) {
+      orClauses.push({ brandId: target.brandId });
+    }
+
+    const candidates = await prisma.product.findMany({
+      where: {
+        id: { not: productId },
+        isActive: true,
+        stock: { gt: 0 },
+        OR: orClauses,
+      },
+      include: this.includeRelations,
+      take: 20,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const subcategorySet = new Set(subcategoryIds);
+    const scored = candidates.map((c) => {
+      let score = 0;
+      const candSubIds = (c.subcategories ?? []).map((s: { id: string }) => s.id);
+      if (candSubIds.some((id: string) => subcategorySet.has(id))) score += 3;
+      if (target.brandId && c.brandId === target.brandId) score += 2;
+      if (animalCandidates.includes(c.animalType as AnimalType)) score += 1;
+      return { product: c, score };
+    });
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.product.createdAt.getTime() - a.product.createdAt.getTime();
+    });
+
+    return scored.slice(0, limit ?? 4).map((s) => this.mapToEntity(s.product));
   }
 
   async updateFeatured(id: string, isFeatured: boolean): Promise<void> {

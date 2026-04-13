@@ -45,6 +45,7 @@ export interface IProductRepository {
   delete(id: string): Promise<void>;
   findFeatured(limit?: number): Promise<Product[]>;
   findRecommended(limit?: number): Promise<Product[]>;
+  findRelated(productId: string, limit?: number): Promise<Product[]>;
   updateFeatured(id: string, isFeatured: boolean): Promise<void>;
   updateRecommended(id: string, isRecommended: boolean): Promise<void>;
   bulkUpdateFeatured(featuredIds: string[]): Promise<void>;

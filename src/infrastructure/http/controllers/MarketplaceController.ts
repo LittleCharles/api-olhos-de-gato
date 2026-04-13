@@ -20,11 +20,9 @@ import {
   ListingFiltersSchema,
 } from "../../../application/dtos/MarketplaceDTO.js";
 import { MarketplacePresenter } from "../presenters/MarketplacePresenter.js";
-import { RefreshMarketplaceTokenUseCase } from "../../../application/use-cases/marketplace/RefreshMarketplaceTokenUseCase.js";
 import { MarketplacePlatform } from "../../../domain/enums/index.js";
 import { MercadoLivreProvider } from "../../providers/marketplace/MercadoLivreProvider.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import type { IMarketplaceProvider } from "../../../application/interfaces/IMarketplaceProvider.js";
 
 function getProvider(platform: MarketplacePlatform) {
   switch (platform) {
@@ -32,19 +30,6 @@ function getProvider(platform: MarketplacePlatform) {
       return new MercadoLivreProvider();
     default:
       throw new AppError(`Marketplace ${platform} ainda não suportado`, 400);
-  }
-}
-
-async function ensureFreshToken(accountId: string, provider: IMarketplaceProvider): Promise<void> {
-  const accountsUseCase = container.resolve(ListMarketplaceAccountsUseCase);
-  const accounts = await accountsUseCase.execute();
-  const account = accounts.find((a) => a.id === accountId);
-  if (!account || !account.refreshToken) return;
-
-  if (account.isTokenExpired()) {
-    const refreshUseCase = container.resolve(RefreshMarketplaceTokenUseCase);
-    await refreshUseCase.execute(account, provider);
-    console.log(`[Marketplace] Token renovado antes da operação para ${account.platform}`);
   }
 }
 
@@ -70,19 +55,36 @@ export class MarketplaceController {
     request: FastifyRequest<{ Params: { platform: string }; Querystring: { code?: string } }>,
     reply: FastifyReply,
   ) {
-    const platform = MarketplacePlatformParam.parse(request.params.platform);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    let platform: string;
+
+    try {
+      platform = MarketplacePlatformParam.parse(request.params.platform);
+    } catch {
+      return reply.redirect(`${frontendUrl}/admin/marketplace?error=invalid_platform`);
+    }
+
     const code = request.query.code || (request.body as any)?.code;
     if (!code) {
-      throw new AppError("Código de autorização não fornecido", 400);
+      return reply.redirect(
+        `${frontendUrl}/admin/marketplace?error=missing_code&platform=${platform}`,
+      );
     }
-    const provider = getProvider(platform);
 
-    const useCase = container.resolve(ConnectMarketplaceUseCase);
-    const account = await useCase.execute(platform, code, provider);
-
-    // Redirect back to admin panel after successful OAuth
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-    return reply.redirect(`${frontendUrl}/admin/marketplace?connected=${platform}`);
+    try {
+      const provider = getProvider(platform as MarketplacePlatform);
+      const useCase = container.resolve(ConnectMarketplaceUseCase);
+      await useCase.execute(platform as MarketplacePlatform, code, provider);
+      return reply.redirect(
+        `${frontendUrl}/admin/marketplace?connected=${platform}`,
+      );
+    } catch (err) {
+      request.log.error({ err, platform }, "OAuth callback failed");
+      const message = err instanceof Error ? encodeURIComponent(err.message) : "unknown";
+      return reply.redirect(
+        `${frontendUrl}/admin/marketplace?error=oauth_failed&platform=${platform}&message=${message}`,
+      );
+    }
   }
 
   async disconnect(
