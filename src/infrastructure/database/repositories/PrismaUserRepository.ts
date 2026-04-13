@@ -3,6 +3,7 @@ import { IUserRepository } from "../../../domain/repositories/IUserRepository.js
 import { User } from "../../../domain/entities/User.js";
 import { Email } from "../../../domain/value-objects/Email.js";
 import { UserRole } from "../../../domain/enums/index.js";
+import type { PaginatedResult } from "../../../domain/repositories/IProductRepository.js";
 
 export class PrismaUserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
@@ -23,6 +24,38 @@ export class PrismaUserRepository implements IUserRepository {
     return this.mapToEntity(user);
   }
 
+  async findAllByRole(
+    role: UserRole,
+    pagination: { page: number; limit: number },
+  ): Promise<PaginatedResult<User>> {
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { role },
+        orderBy: [{ isMaster: "desc" }, { createdAt: "asc" }],
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where: { role } }),
+    ]);
+
+    return {
+      data: users.map((u) => this.mapToEntity(u)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async countByRole(role: UserRole, onlyActive = false): Promise<number> {
+    return prisma.user.count({
+      where: { role, ...(onlyActive ? { isActive: true } : {}) },
+    });
+  }
+
   async create(user: User): Promise<User> {
     const created = await prisma.user.create({
       data: {
@@ -32,6 +65,8 @@ export class PrismaUserRepository implements IUserRepository {
         name: user.name,
         role: user.role,
         phone: user.phone,
+        isActive: user.isActive,
+        isMaster: user.isMaster,
       },
     });
 
@@ -54,6 +89,7 @@ export class PrismaUserRepository implements IUserRepository {
         name: user.name,
         phone: user.phone,
         passwordHash: user.passwordHash,
+        isActive: user.isActive,
         resetToken: user.resetToken ?? null,
         resetTokenExpiry: user.resetTokenExpiry ?? null,
       },
@@ -74,6 +110,7 @@ export class PrismaUserRepository implements IUserRepository {
       role: data.role as UserRole,
       phone: data.phone,
       isActive: data.isActive ?? true,
+      isMaster: data.isMaster ?? false,
       resetToken: data.resetToken,
       resetTokenExpiry: data.resetTokenExpiry,
       createdAt: data.createdAt,

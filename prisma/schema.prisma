@@ -87,6 +87,7 @@ model User {
   role         UserRole @default(CUSTOMER)
   phone             String?
   isActive          Boolean   @default(true) @map("is_active")
+  isMaster          Boolean   @default(false) @map("is_master")
   resetToken        String?   @unique @map("reset_token")
   resetTokenExpiry  DateTime? @map("reset_token_expiry")
   createdAt    DateTime @default(now()) @map("created_at")

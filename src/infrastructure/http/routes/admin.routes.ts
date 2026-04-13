@@ -12,6 +12,7 @@ import { ProductImageController } from "../controllers/ProductImageController.js
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
 import { MarketplaceController } from "../controllers/MarketplaceController.js";
 import { BrandController } from "../controllers/BrandController.js";
+import { AdminUserController } from "../controllers/AdminUserController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -28,6 +29,7 @@ const productImageController = new ProductImageController();
 const supportTicketController = new SupportTicketController();
 const marketplaceController = new MarketplaceController();
 const brandController = new BrandController();
+const adminUserController = new AdminUserController();
 
 export async function adminRoutes(app: FastifyInstance) {
   // Protege todas as rotas admin
@@ -117,4 +119,9 @@ export async function adminRoutes(app: FastifyInstance) {
   // Marketplace Sync & Categories (2 endpoints)
   app.post("/marketplace/sync/stock", marketplaceController.syncStock);
   app.get("/marketplace/categories/:platform", marketplaceController.getCategories);
+
+  // Admin Users (3 endpoints)
+  app.get("/users", adminUserController.list);
+  app.post("/users", adminUserController.create);
+  app.patch("/users/:id/status", adminUserController.toggleStatus);
 }

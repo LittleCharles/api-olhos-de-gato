@@ -1,38 +1,27 @@
+import { randomUUID } from "crypto";
 import { inject, injectable } from "tsyringe";
 import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
 import type { IHashProvider } from "../../interfaces/IHashProvider.js";
 import { User } from "../../../domain/entities/User.js";
 import { Email } from "../../../domain/value-objects/Email.js";
 import { UserRole } from "../../../domain/enums/index.js";
-import { RegisterDTO } from "../../dtos/AuthDTO.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { randomUUID } from "crypto";
-
-interface RegisterResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
-  };
-}
+import { CreateAdminDTO } from "../../dtos/AdminUserDTO.js";
 
 @injectable()
-export class RegisterUseCase {
+export class CreateAdminUseCase {
   constructor(
     @inject("UserRepository")
     private userRepository: IUserRepository,
     @inject("HashProvider")
     private hashProvider: IHashProvider,
-  ) { }
+  ) {}
 
-  async execute(data: RegisterDTO): Promise<RegisterResponse> {
+  async execute(data: CreateAdminDTO): Promise<User> {
     const email = Email.create(data.email);
 
-    const existingUser = await this.userRepository.findByEmail(
-      email.getValue(),
-    );
-    if (existingUser) {
+    const existing = await this.userRepository.findByEmail(email.getValue());
+    if (existing) {
       throw new AppError("Email já cadastrado", 409);
     }
 
@@ -43,7 +32,7 @@ export class RegisterUseCase {
       email,
       passwordHash,
       name: data.name,
-      role: UserRole.CUSTOMER,
+      role: UserRole.ADMIN,
       phone: data.phone,
       isActive: true,
       isMaster: false,
@@ -51,15 +40,6 @@ export class RegisterUseCase {
       updatedAt: new Date(),
     });
 
-    const createdUser = await this.userRepository.create(user);
-
-    return {
-      user: {
-        id: createdUser.id,
-        email: createdUser.email.getValue(),
-        name: createdUser.name,
-        role: createdUser.role,
-      },
-    };
+    return this.userRepository.create(user);
   }
 }
