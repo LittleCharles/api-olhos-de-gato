@@ -1,7 +1,11 @@
 import { inject, injectable } from "tsyringe";
 import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
 import type { IProductRepository } from "../../../domain/repositories/IProductRepository.js";
+import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
+import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
+import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { OrderStatus, PaymentStatus } from "../../../domain/enums/index.js";
+import { buildPaymentConfirmedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface HandleStripeEventInput {
   eventType: string;
@@ -15,6 +19,12 @@ export class HandleStripeWebhookUseCase {
     private orderRepository: IOrderRepository,
     @inject("ProductRepository")
     private productRepository: IProductRepository,
+    @inject("CustomerRepository")
+    private customerRepository: ICustomerRepository,
+    @inject("StoreSettingsRepository")
+    private storeSettingsRepository: IStoreSettingsRepository,
+    @inject("MailProvider")
+    private mailProvider: IMailProvider,
   ) {}
 
   async execute(input: HandleStripeEventInput): Promise<void> {
@@ -35,6 +45,22 @@ export class HandleStripeWebhookUseCase {
           OrderStatus.CONFIRMED,
           "Pagamento confirmado via Stripe",
         );
+
+        // Best-effort confirmation email (does not break webhook flow)
+        try {
+          const customer = await this.customerRepository.findById(order.customerId);
+          if (customer?.email) {
+            const store = await this.storeSettingsRepository.get();
+            const email = buildPaymentConfirmedEmail(
+              order,
+              { name: customer.name, email: customer.email },
+              { name: store.storeName, address: store.address },
+            );
+            await this.mailProvider.send({ to: customer.email, ...email });
+          }
+        } catch (err) {
+          console.error("[Stripe] Falha ao enviar email de pagamento confirmado:", err);
+        }
         break;
       }
 

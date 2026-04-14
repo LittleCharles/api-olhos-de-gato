@@ -87,6 +87,10 @@ export class Order {
     return this.props.pickupLocation;
   }
 
+  get isPickup(): boolean {
+    return !!this.props.pickupLocation;
+  }
+
   get shippingCost(): Money | undefined {
     return this.props.shippingCost;
   }

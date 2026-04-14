@@ -10,6 +10,14 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().default("http://localhost:3000"),
 });
 
+const MAIL_KEYS = [
+  "MAIL_HOST",
+  "MAIL_PORT",
+  "MAIL_USER",
+  "MAIL_PASS",
+  "MAIL_FROM",
+] as const;
+
 export function validateEnv() {
   const result = envSchema.safeParse(process.env);
 
@@ -19,6 +27,13 @@ export function validateEnv() {
       console.error(`  - ${issue.path.join(".")}: ${issue.message}`);
     }
     process.exit(1);
+  }
+
+  const missingMail = MAIL_KEYS.filter((k) => !process.env[k]);
+  if (missingMail.length > 0) {
+    console.warn(
+      `[env] Envs de email ausentes (${missingMail.join(", ")}). Emails NÃO serão enviados.`,
+    );
   }
 
   return result.data;

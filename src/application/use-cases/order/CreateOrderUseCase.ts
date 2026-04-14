@@ -6,6 +6,8 @@ import { Money } from "../../../domain/value-objects/Money.js";
 import { OrderStatus, PaymentStatus, PaymentMethod } from "../../../domain/enums/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { prisma } from "../../../infrastructure/database/prisma/client.js";
+import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
+import { buildOrderCreatedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface CreateOrderInput {
   customerId: string;
@@ -25,6 +27,8 @@ export class CreateOrderUseCase {
   constructor(
     @inject("MailProvider")
     private mailProvider: IMailProvider,
+    @inject("StoreSettingsRepository")
+    private storeSettingsRepository: IStoreSettingsRepository,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
@@ -171,60 +175,19 @@ export class CreateOrderUseCase {
     // Send order confirmation email OUTSIDE the transaction (non-blocking)
     if (input.customerEmail) {
       try {
-        const itemsHtml = orderItems
-          .map(
-            (item) =>
-              `<tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.productName}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.unitPrice.getValue().toFixed(2)}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">R$ ${item.total.getValue().toFixed(2)}</td>
-              </tr>`,
-          )
-          .join("");
-
-        const shippingValue = shippingCost.getValue();
-
+        const store = await this.storeSettingsRepository.get();
+        const email = buildOrderCreatedEmail(
+          createdOrder,
+          { name: input.customerName || "cliente", email: input.customerEmail },
+          { name: store.storeName, address: store.address },
+        );
         await this.mailProvider.send({
           to: input.customerEmail,
-          subject: `Pedido recebido #${createdOrder.id.slice(0, 8)} - Olhos de Gato`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #333;">Pedido recebido!</h2>
-              <p>Olá <strong>${input.customerName || "cliente"}</strong>,</p>
-              <p>Seu pedido foi recebido com sucesso. Aqui estão os detalhes:</p>
-
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <thead>
-                  <tr style="background-color: #f8f8f8;">
-                    <th style="padding: 10px; text-align: left;">Produto</th>
-                    <th style="padding: 10px; text-align: center;">Qtd</th>
-                    <th style="padding: 10px; text-align: right;">Preço</th>
-                    <th style="padding: 10px; text-align: right;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                </tbody>
-              </table>
-
-              <div style="text-align: right; margin-top: 10px;">
-                <p style="margin: 4px 0;">Subtotal: <strong>R$ ${subtotal.getValue().toFixed(2)}</strong></p>
-                ${shippingValue > 0 ? `<p style="margin: 4px 0;">Frete: <strong>R$ ${shippingValue.toFixed(2)}</strong></p>` : ""}
-                <p style="margin: 4px 0; font-size: 18px; color: #ec4899;">Total: <strong>R$ ${total.getValue().toFixed(2)}</strong></p>
-              </div>
-
-              <p style="color: #666; font-size: 14px; margin-top: 20px;">
-                Acompanhe seu pedido na sua conta em nosso site.
-              </p>
-
-              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-              <p style="color: #999; font-size: 12px;">Olhos de Gato - Petshop</p>
-            </div>
-          `,
+          ...email,
         });
-      } catch {
+      } catch (err) {
         // Email failure should not break the order flow
+        console.error("[CreateOrder] Falha ao enviar email de confirmacao:", err);
       }
     }
 

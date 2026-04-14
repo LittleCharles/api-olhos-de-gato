@@ -2,6 +2,11 @@ import { inject, injectable } from "tsyringe";
 import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { ForgotPasswordDTO } from "../../dtos/AuthDTO.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import {
+  baseLayout,
+  escapeHtmlValue,
+} from "../../../infrastructure/providers/mail/templates/baseLayout.js";
 import { randomUUID } from "crypto";
 
 @injectable()
@@ -25,29 +30,35 @@ export class ForgotPasswordUseCase {
 
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
       const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+      const safeName = escapeHtmlValue(user.name);
 
-      await this.mailProvider.send({
-        to: user.email.getValue(),
-        subject: "Redefinir sua senha - Olhos de Gato",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333;">Redefinir sua senha</h2>
-            <p>Olá <strong>${user.name}</strong>,</p>
-            <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>
-            <p>Clique no botão abaixo para criar uma nova senha:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}"
-                 style="background-color: #ec4899; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                Redefinir senha
-              </a>
-            </div>
-            <p style="color: #666; font-size: 14px;">Este link expira em <strong>1 hora</strong>.</p>
-            <p style="color: #666; font-size: 14px;">Se você não solicitou a redefinição de senha, ignore este email.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="color: #999; font-size: 12px;">Olhos de Gato - Petshop</p>
-          </div>
-        `,
+      const content = `
+        <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Redefinir sua senha</h2>
+        <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
+        <p style="margin:0 0 12px; color:#3f3f46;">Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.</p>
+        <p style="margin:0; color:#71717a; font-size:13px;">O link expira em <strong>1 hora</strong>. Se você não solicitou, pode ignorar esta mensagem — sua senha atual continua válida.</p>
+      `;
+
+      const html = baseLayout({
+        title: "Redefinir sua senha",
+        preview: "Link de redefinição válido por 1 hora",
+        content,
+        cta: { label: "Redefinir senha", url: resetLink },
       });
+
+      try {
+        await this.mailProvider.send({
+          to: user.email.getValue(),
+          subject: "Redefinir sua senha — Olhos de Gato",
+          html,
+        });
+      } catch (err) {
+        console.error("[ForgotPassword] Falha ao enviar email:", err);
+        throw new AppError(
+          "Não foi possível enviar o email agora. Tente novamente em alguns minutos.",
+          503,
+        );
+      }
     }
 
     return {

@@ -4,6 +4,17 @@ import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { TicketReply } from "../../../domain/entities/TicketReply.js";
 import { TicketStatus } from "../../../domain/enums/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import {
+  baseLayout,
+  escapeHtmlValue,
+} from "../../../infrastructure/providers/mail/templates/baseLayout.js";
+
+const subjectLabels: Record<string, string> = {
+  PEDIDO: "Dúvidas sobre pedido",
+  PRODUTO: "Dúvidas sobre produto",
+  TROCA: "Troca ou devolução",
+  OUTRO: "Outro assunto",
+};
 
 @injectable()
 export class ReplyToTicketUseCase {
@@ -32,34 +43,34 @@ export class ReplyToTicketUseCase {
       await this.supportTicketRepository.update(ticket);
     }
 
-    const subjectLabels: Record<string, string> = {
-      PEDIDO: "Dúvidas sobre pedido",
-      PRODUTO: "Dúvidas sobre produto",
-      TROCA: "Troca ou devolução",
-      OUTRO: "Outro assunto",
-    };
+    const subjectLabel = subjectLabels[ticket.subject] ?? ticket.subject;
+    const safeName = escapeHtmlValue(ticket.name);
+    const safeMessage = escapeHtmlValue(message).replace(/\n/g, "<br/>");
 
-    await this.mailProvider.send({
-      to: ticket.email,
-      subject: `Re: ${subjectLabels[ticket.subject] ?? ticket.subject} - Olhos de Gato`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #ec4899; padding: 20px; border-radius: 12px 12px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 20px;">Olhos de Gato - Suporte</h1>
-          </div>
-          <div style="padding: 24px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-            <p style="color: #374151;">Olá, <strong>${ticket.name}</strong>!</p>
-            <p style="color: #374151;">Recebemos sua mensagem e aqui está nossa resposta:</p>
-            <div style="background: white; border-left: 4px solid #ec4899; padding: 16px; margin: 16px 0; border-radius: 4px;">
-              <p style="color: #374151; margin: 0; white-space: pre-wrap;">${message}</p>
-            </div>
-            <p style="color: #6b7280; font-size: 14px;">Se precisar de mais alguma coisa, basta responder este e-mail ou acessar nossa central de atendimento.</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-            <p style="color: #9ca3af; font-size: 12px;">Olhos de Gato - Tudo para seu felino</p>
-          </div>
-        </div>
-      `,
+    const content = `
+      <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Nossa resposta</h2>
+      <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
+      <p style="margin:0 0 16px; color:#3f3f46;">Recebemos sua mensagem sobre <strong>${escapeHtmlValue(subjectLabel)}</strong> e aqui está nosso retorno:</p>
+      <div style="background:#fafafa; border-left:4px solid #ec4899; padding:16px; margin:16px 0; border-radius:4px; color:#3f3f46; white-space:pre-wrap;">${safeMessage}</div>
+      <p style="margin:0; color:#71717a; font-size:13px;">Se precisar de mais alguma coisa, basta responder este email ou abrir um novo chamado na central de atendimento.</p>
+    `;
+
+    const html = baseLayout({
+      title: `Re: ${subjectLabel}`,
+      preview: `Resposta do suporte sobre ${subjectLabel.toLowerCase()}`,
+      content,
     });
+
+    try {
+      await this.mailProvider.send({
+        to: ticket.email,
+        subject: `Re: ${subjectLabel} — Olhos de Gato`,
+        html,
+      });
+    } catch (err) {
+      // Best-effort: a resposta já foi salva no DB. Log o erro mas não rethrow.
+      console.error("[ReplyToTicket] Falha ao notificar cliente por email:", err);
+    }
 
     return reply;
   }
