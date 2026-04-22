@@ -18,9 +18,9 @@ export class StoreSettingsPresenter {
       socialInstagram: settings.socialInstagram,
       socialFacebook: settings.socialFacebook,
       socialTiktok: settings.socialTiktok,
-      socialMercadoLivre: settings.socialMercadoLivre,
-      socialShopee: settings.socialShopee,
-      socialAmazon: settings.socialAmazon,
+      socialMercadoLivre: settings.socialMercadoLivre || undefined,
+      socialShopee: settings.socialShopee || undefined,
+      socialAmazon: settings.socialAmazon || undefined,
       updatedAt: settings.updatedAt.toISOString(),
     };
   }
