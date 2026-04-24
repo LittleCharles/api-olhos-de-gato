@@ -6,6 +6,8 @@ import { SetMainImageUseCase } from "../../../application/use-cases/product/SetM
 import { ReorderProductImagesUseCase } from "../../../application/use-cases/product/ReorderProductImagesUseCase.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 
+const ALLOWED_IMAGE_MIMETYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export class ProductImageController {
   async upload(
     request: FastifyRequest<{ Params: { id: string } }>,
@@ -21,6 +23,12 @@ export class ProductImageController {
     }> = [];
 
     for await (const part of parts) {
+      if (!ALLOWED_IMAGE_MIMETYPES.includes(part.mimetype)) {
+        throw new AppError(
+          `Tipo de arquivo não permitido: ${part.mimetype}. Aceitos: JPEG, PNG, WebP.`,
+          400,
+        );
+      }
       const buffer = await part.toBuffer();
       files.push({
         buffer,

@@ -18,6 +18,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 export async function buildServer() {
   const app = Fastify({
     logger: true,
+    trustProxy: true,
   });
 
   // Raw body for Stripe webhooks (must be registered first)
