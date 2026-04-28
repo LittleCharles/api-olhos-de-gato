@@ -7,7 +7,8 @@ export const CustomerCreateOrderSchema = z
     addressId: z.string().uuid().optional(),
     notes: z.string().optional(),
     pickupLocation: z.string().optional(),
-    shippingCost: z.number().min(0).optional(),
+    // TODO(go-live+): revalidar via CalculateShippingUseCase — recotar MelhorEnvio no servidor (ver PRE_PROD_AUDIT.md)
+    shippingCost: z.number().min(0).max(999).optional(),
     shippingService: z.string().optional(),
     shippingDays: z.number().int().positive().optional(),
   })

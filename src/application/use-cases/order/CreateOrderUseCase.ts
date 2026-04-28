@@ -7,6 +7,7 @@ import { OrderStatus, PaymentStatus, PaymentMethod } from "../../../domain/enums
 import { AppError } from "../../../shared/errors/AppError.js";
 import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
+import type { IAddressRepository } from "../../../domain/repositories/IAddressRepository.js";
 import { buildOrderCreatedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface CreateOrderInput {
@@ -29,9 +30,19 @@ export class CreateOrderUseCase {
     private mailProvider: IMailProvider,
     @inject("StoreSettingsRepository")
     private storeSettingsRepository: IStoreSettingsRepository,
+    @inject("AddressRepository")
+    private addressRepository: IAddressRepository,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
+    // Ownership check: prevent IDOR — addressId must belong to the customer placing the order
+    if (input.addressId) {
+      const address = await this.addressRepository.findById(input.addressId);
+      if (!address || address.customerId !== input.customerId) {
+        throw new AppError("Endereço inválido", 400);
+      }
+    }
+
     // All DB operations in a single transaction to guarantee atomicity
     const { createdOrder, orderItems, subtotal, shippingCost, total } =
       await prisma.$transaction(async (tx) => {

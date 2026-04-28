@@ -13,12 +13,12 @@ export const UpdateStoreSettingsSchema = z.object({
   creditCardEnabled: z.boolean().optional(),
   creditCardMaxInstallments: z.number().int().min(1).max(24).optional(),
   boletoEnabled: z.boolean().optional(),
-  socialInstagram: z.string().optional(),
-  socialFacebook: z.string().optional(),
-  socialTiktok: z.string().optional(),
-  socialMercadoLivre: z.string().optional(),
-  socialShopee: z.string().optional(),
-  socialAmazon: z.string().optional(),
+  socialInstagram: z.string().url().or(z.literal("")).optional(),
+  socialFacebook: z.string().url().or(z.literal("")).optional(),
+  socialTiktok: z.string().url().or(z.literal("")).optional(),
+  socialMercadoLivre: z.string().url().or(z.literal("")).optional(),
+  socialShopee: z.string().url().or(z.literal("")).optional(),
+  socialAmazon: z.string().url().or(z.literal("")).optional(),
 });
 
 export type UpdateStoreSettingsDTO = z.infer<typeof UpdateStoreSettingsSchema>;

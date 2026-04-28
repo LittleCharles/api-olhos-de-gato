@@ -24,6 +24,7 @@ const MAIL_KEYS = [
 ] as const;
 
 const PROD_REQUIRED = [
+  "FRONTEND_URL",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "CORS_ORIGIN",
@@ -58,6 +59,12 @@ export function validateEnv() {
     if (process.env.CORS_ORIGIN === "true") {
       console.error(
         "[env] CORS_ORIGIN=true é inseguro em produção (permite qualquer origem com credentials:true). Use a URL literal do frontend.",
+      );
+      process.exit(1);
+    }
+    if (process.env.FRONTEND_URL?.includes("localhost")) {
+      console.error(
+        "[env] FRONTEND_URL aponta para localhost em produção. Stripe checkout e emails de reset de senha vão quebrar.",
       );
       process.exit(1);
     }

@@ -5,6 +5,7 @@ import type { ICustomerRepository } from "../../../domain/repositories/ICustomer
 import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { OrderStatus, PaymentStatus } from "../../../domain/enums/index.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import { buildPaymentConfirmedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface HandleStripeEventInput {
@@ -69,18 +70,28 @@ export class HandleStripeWebhookUseCase {
         // Idempotency: skip if already processed (prevents double stock restoration)
         if (order.paymentStatus === PaymentStatus.FAILED) return;
 
-        order.updatePaymentStatus(PaymentStatus.FAILED);
-        await this.orderRepository.update(order);
+        // Atomic: payment status update + stock restoration + history log all-or-nothing
+        await prisma.$transaction(async (tx) => {
+          await tx.order.update({
+            where: { id: order.id },
+            data: { paymentStatus: PaymentStatus.FAILED },
+          });
 
-        // Restore stock for all items since payment failed
-        for (const item of order.items) {
-          await this.productRepository.updateStock(item.productId, item.quantity);
-        }
-        await this.orderRepository.addStatusHistory(
-          order.id,
-          order.status,
-          "Pagamento falhou via Stripe - estoque restaurado",
-        );
+          for (const item of order.items) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+
+          await tx.orderStatusHistory.create({
+            data: {
+              orderId: order.id,
+              status: order.status,
+              notes: "Pagamento falhou via Stripe - estoque restaurado",
+            },
+          });
+        });
         break;
       }
     }
