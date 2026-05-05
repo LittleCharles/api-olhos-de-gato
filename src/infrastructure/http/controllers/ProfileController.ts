@@ -2,7 +2,8 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { container } from "tsyringe";
 import { GetCurrentUserUseCase } from "../../../application/use-cases/customer/GetCurrentUserUseCase.js";
 import { UpdateProfileUseCase } from "../../../application/use-cases/customer/UpdateProfileUseCase.js";
-import { UpdateProfileSchema } from "../../../application/dtos/ProfileDTO.js";
+import { ChangePasswordUseCase } from "../../../application/use-cases/customer/ChangePasswordUseCase.js";
+import { UpdateProfileSchema, ChangePasswordSchema } from "../../../application/dtos/ProfileDTO.js";
 
 export class ProfileController {
   async me(request: FastifyRequest, reply: FastifyReply) {
@@ -36,5 +37,14 @@ export class ProfileController {
       cpf: profile.cpf,
       birthDate: profile.birthDate?.toISOString() ?? null,
     });
+  }
+
+  async changePassword(request: FastifyRequest, reply: FastifyReply) {
+    const data = ChangePasswordSchema.parse(request.body);
+
+    const changePasswordUseCase = container.resolve(ChangePasswordUseCase);
+    await changePasswordUseCase.execute(request.user.id, data);
+
+    return reply.send({ message: "Senha atualizada com sucesso" });
   }
 }

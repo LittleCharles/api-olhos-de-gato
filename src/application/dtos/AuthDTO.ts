@@ -4,12 +4,17 @@ export const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
   name: z.string().min(2).max(100),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .regex(/^\d{10,11}$/, "Telefone deve ter 10 ou 11 dígitos sem máscara")
+    .optional()
+    .nullable(),
 });
 
 export const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 export const ForgotPasswordSchema = z.object({

@@ -11,16 +11,18 @@ import {
   ResetPasswordSchema,
 } from "../../../application/dtos/AuthDTO.js";
 
+const ONE_DAY_SECONDS = 24 * 60 * 60;
+const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
 
-function setAuthCookie(reply: FastifyReply, token: string) {
+function setAuthCookie(reply: FastifyReply, token: string, maxAge: number) {
   const isProd = process.env.NODE_ENV === "production";
   reply.setCookie("auth_token", token, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
     path: "/",
-    maxAge: SEVEN_DAYS_SECONDS,
+    maxAge,
   });
 }
 
@@ -36,7 +38,7 @@ export class AuthController {
       { expiresIn: "7d" },
     );
 
-    setAuthCookie(reply, token);
+    setAuthCookie(reply, token, SEVEN_DAYS_SECONDS);
 
     return reply.status(201).send({ user: result.user });
   }
@@ -47,12 +49,16 @@ export class AuthController {
     const loginUseCase = container.resolve(LoginUseCase);
     const result = await loginUseCase.execute(data);
 
+    // "Lembrar-me" controla a duração: 30 dias se marcado, 24h por padrão
+    const expiresIn = data.rememberMe ? "30d" : "24h";
+    const maxAge = data.rememberMe ? THIRTY_DAYS_SECONDS : ONE_DAY_SECONDS;
+
     const token = await reply.jwtSign(
       { id: result.user.id, role: result.user.role },
-      { expiresIn: "7d" },
+      { expiresIn },
     );
 
-    setAuthCookie(reply, token);
+    setAuthCookie(reply, token, maxAge);
 
     return reply.send({ user: result.user });
   }

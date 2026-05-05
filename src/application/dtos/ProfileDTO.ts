@@ -24,4 +24,10 @@ export const UpdateProfileSchema = z.object({
   birthDate: z.coerce.date().optional().nullable(),
 });
 
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z.string().min(8, "A nova senha deve ter no mínimo 8 caracteres"),
+});
+
 export type UpdateProfileDTO = z.infer<typeof UpdateProfileSchema>;
+export type ChangePasswordDTO = z.infer<typeof ChangePasswordSchema>;

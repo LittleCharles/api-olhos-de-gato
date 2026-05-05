@@ -73,6 +73,7 @@ export async function publicRoutes(app: FastifyInstance) {
   // Profile
   app.get("/me", { preHandler: customerAuth }, profileController.me);
   app.put("/me", { preHandler: customerAuth }, profileController.updateProfile);
+  app.post("/me/change-password", { preHandler: customerAuth }, profileController.changePassword);
 
   // Addresses
   app.get("/addresses", { preHandler: customerAuth }, addressController.list);
