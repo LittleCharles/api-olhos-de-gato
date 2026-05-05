@@ -1,6 +1,7 @@
 import { inject, injectable } from "tsyringe";
 import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
 import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
+import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { buildTrackingEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
@@ -12,6 +13,8 @@ export class UpdateTrackingCodeUseCase {
     private orderRepository: IOrderRepository,
     @inject("CustomerRepository")
     private customerRepository: ICustomerRepository,
+    @inject("StoreSettingsRepository")
+    private storeSettingsRepository: IStoreSettingsRepository,
     @inject("MailProvider")
     private mailProvider: IMailProvider,
   ) {}
@@ -31,10 +34,20 @@ export class UpdateTrackingCodeUseCase {
     try {
       const customer = await this.customerRepository.findById(order.customerId);
       if (customer?.email) {
-        const email = buildTrackingEmail(order, trackingCode, {
-          name: customer.name,
-          email: customer.email,
-        });
+        const store = await this.storeSettingsRepository.get();
+        const email = buildTrackingEmail(
+          order,
+          trackingCode,
+          { name: customer.name, email: customer.email },
+          {
+            name: store.storeName,
+            address: store.address,
+            email: store.email,
+            socialInstagram: store.socialInstagram || undefined,
+            socialFacebook: store.socialFacebook || undefined,
+            socialTiktok: store.socialTiktok || undefined,
+          },
+        );
         await this.mailProvider.send({ to: customer.email, ...email });
       }
     } catch (err) {

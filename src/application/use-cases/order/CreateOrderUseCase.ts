@@ -8,6 +8,7 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IAddressRepository } from "../../../domain/repositories/IAddressRepository.js";
+import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
 import { buildOrderCreatedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface CreateOrderInput {
@@ -32,9 +33,25 @@ export class CreateOrderUseCase {
     private storeSettingsRepository: IStoreSettingsRepository,
     @inject("AddressRepository")
     private addressRepository: IAddressRepository,
+    @inject("CustomerRepository")
+    private customerRepository: ICustomerRepository,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
+    // Cliente precisa ter cadastro completo (CPF + telefone) pra finalizar — defesa em camadas
+    // contra DevTools tampering (frontend já bloqueia via banner).
+    const customer = await this.customerRepository.findById(input.customerId);
+    if (!customer) {
+      throw new AppError("Cliente não encontrado", 404);
+    }
+    // `||` cobre null, undefined e string vazia (legado)
+    if (!customer.cpf || !customer.phone || customer.cpf.trim() === "" || customer.phone.trim() === "") {
+      throw new AppError(
+        "Complete seu cadastro com CPF e telefone antes de finalizar a compra.",
+        400,
+      );
+    }
+
     // Ownership check: prevent IDOR — addressId must belong to the customer placing the order
     if (input.addressId) {
       const address = await this.addressRepository.findById(input.addressId);
@@ -190,7 +207,14 @@ export class CreateOrderUseCase {
         const email = buildOrderCreatedEmail(
           createdOrder,
           { name: input.customerName || "cliente", email: input.customerEmail },
-          { name: store.storeName, address: store.address },
+          {
+            name: store.storeName,
+            address: store.address,
+            email: store.email,
+            socialInstagram: store.socialInstagram || undefined,
+            socialFacebook: store.socialFacebook || undefined,
+            socialTiktok: store.socialTiktok || undefined,
+          },
         );
         await this.mailProvider.send({
           to: input.customerEmail,

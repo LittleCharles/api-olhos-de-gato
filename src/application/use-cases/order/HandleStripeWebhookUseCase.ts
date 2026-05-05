@@ -55,7 +55,14 @@ export class HandleStripeWebhookUseCase {
             const email = buildPaymentConfirmedEmail(
               order,
               { name: customer.name, email: customer.email },
-              { name: store.storeName, address: store.address },
+              {
+                name: store.storeName,
+                address: store.address,
+                email: store.email,
+                socialInstagram: store.socialInstagram || undefined,
+                socialFacebook: store.socialFacebook || undefined,
+                socialTiktok: store.socialTiktok || undefined,
+              },
             );
             await this.mailProvider.send({ to: customer.email, ...email });
           }

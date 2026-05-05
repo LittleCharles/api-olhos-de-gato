@@ -56,7 +56,14 @@ export class UpdateOrderStatusUseCase {
             updated,
             status,
             { name: customer.name, email: customer.email },
-            { name: store.storeName, address: store.address },
+            {
+              name: store.storeName,
+              address: store.address,
+              email: store.email,
+              socialInstagram: store.socialInstagram || undefined,
+              socialFacebook: store.socialFacebook || undefined,
+              socialTiktok: store.socialTiktok || undefined,
+            },
             notes,
           );
           if (email) {

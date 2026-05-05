@@ -1,10 +1,23 @@
 import { Order } from "../../../../domain/entities/Order.js";
 import { OrderStatus } from "../../../../domain/enums/index.js";
-import { baseLayout, escapeHtmlValue } from "./baseLayout.js";
+import { baseLayout, escapeHtmlValue, type BaseLayoutStoreInfo } from "./baseLayout.js";
 
 export interface StoreInfo {
   name: string;
   address: string;
+  email?: string;
+  socialInstagram?: string;
+  socialFacebook?: string;
+  socialTiktok?: string;
+}
+
+function toBaseLayoutStoreInfo(store: StoreInfo): BaseLayoutStoreInfo {
+  return {
+    helpEmail: store.email,
+    socialInstagram: store.socialInstagram || undefined,
+    socialFacebook: store.socialFacebook || undefined,
+    socialTiktok: store.socialTiktok || undefined,
+  };
 }
 
 export interface CustomerInfo {
@@ -110,6 +123,7 @@ export function buildOrderCreatedEmail(
       title: `Pedido #${shortId}`,
       preview: `Pedido #${shortId} confirmado — total R$ ${totalStr}`,
       content,
+      storeInfo: toBaseLayoutStoreInfo(store),
     }),
   };
 }
@@ -139,6 +153,7 @@ export function buildPaymentConfirmedEmail(
       title: `Pagamento confirmado — #${shortId}`,
       preview: `Pagamento do pedido #${shortId} foi confirmado`,
       content,
+      storeInfo: toBaseLayoutStoreInfo(store),
     }),
   };
 }
@@ -198,6 +213,7 @@ export function buildStatusChangeEmail(
       title: copy.title,
       preview: copy.body,
       content,
+      storeInfo: toBaseLayoutStoreInfo(store),
     }),
   };
 }
@@ -206,6 +222,7 @@ export function buildTrackingEmail(
   order: Order,
   trackingCode: string,
   customer: CustomerInfo,
+  store: StoreInfo,
 ): { subject: string; html: string } {
   const shortId = orderShortId(order);
   const safeName = escapeHtmlValue(customer.name || "cliente");
@@ -229,6 +246,7 @@ export function buildTrackingEmail(
       preview: `Código de rastreio: ${trackingCode}`,
       content,
       cta: { label: "Rastrear pedido", url: correiosUrl },
+      storeInfo: toBaseLayoutStoreInfo(store),
     }),
   };
 }

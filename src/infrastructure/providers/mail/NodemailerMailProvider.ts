@@ -17,6 +17,11 @@ export class NodemailerMailProvider implements IMailProvider {
       // Em dev, aceita cert self-signed (comum quando antivírus/proxy intercepta TLS).
       // Em prod valida normalmente pra não baixar a barra de segurança.
       tls: isProd ? undefined : { rejectUnauthorized: false },
+      // Sem isso o sendMail pode pendurar minutos quando SMTP estiver fora (Mailtrap travou,
+      // DNS demora, firewall corta) e a request HTTP que chamou send() trava junto.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
     });
   }
 

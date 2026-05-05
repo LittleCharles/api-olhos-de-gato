@@ -1,5 +1,6 @@
 import { inject, injectable } from "tsyringe";
 import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { ForgotPasswordDTO } from "../../dtos/AuthDTO.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -14,6 +15,8 @@ export class ForgotPasswordUseCase {
   constructor(
     @inject("UserRepository")
     private userRepository: IUserRepository,
+    @inject("StoreSettingsRepository")
+    private storeSettingsRepository: IStoreSettingsRepository,
     @inject("MailProvider")
     private mailProvider: IMailProvider,
   ) { }
@@ -32,18 +35,32 @@ export class ForgotPasswordUseCase {
       const resetLink = `${frontendUrl}/reset-password?token=${token}`;
       const safeName = escapeHtmlValue(user.name);
 
+      // Best-effort fetch dos settings — se falhar, manda o email com fallback do baseLayout
+      let storeInfo;
+      try {
+        const store = await this.storeSettingsRepository.get();
+        storeInfo = {
+          helpEmail: store.email,
+          socialInstagram: store.socialInstagram || undefined,
+          socialFacebook: store.socialFacebook || undefined,
+          socialTiktok: store.socialTiktok || undefined,
+        };
+      } catch (err) {
+        console.error("[ForgotPassword] Falha ao buscar StoreSettings (segue com fallback):", err);
+      }
+
       const content = `
-        <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Redefinir sua senha</h2>
-        <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
-        <p style="margin:0 0 12px; color:#3f3f46;">Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.</p>
-        <p style="margin:0; color:#71717a; font-size:13px;">O link expira em <strong>1 hora</strong>. Se você não solicitou, pode ignorar esta mensagem — sua senha atual continua válida.</p>
+        <h1 style="margin:0 0 16px; font-size:22px; font-weight:700; color:#18181b; line-height:1.3;">Vamos redefinir sua senha</h1>
+        <p style="margin:0 0 14px; color:#3f3f46; font-size:15px; line-height:1.6;">Olá, <strong>${safeName}</strong>! Recebemos um pedido para criar uma nova senha na sua conta do Olhos de Gato.</p>
+        <p style="margin:0 0 8px; color:#3f3f46; font-size:15px; line-height:1.6;">Clique no botão abaixo para criar uma nova senha. O link expira em <strong>1 hora</strong>.</p>
       `;
 
       const html = baseLayout({
         title: "Redefinir sua senha",
         preview: "Link de redefinição válido por 1 hora",
         content,
-        cta: { label: "Redefinir senha", url: resetLink },
+        cta: { label: "Redefinir minha senha", url: resetLink },
+        storeInfo,
       });
 
       try {
