@@ -90,6 +90,9 @@ model User {
   isMaster          Boolean   @default(false) @map("is_master")
   resetToken        String?   @unique @map("reset_token")
   resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  emailVerifyToken  String?   @unique @map("email_verify_token")
+  emailVerifyExpiry DateTime? @map("email_verify_expiry")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -105,6 +108,7 @@ model Customer {
   userId    String    @unique @map("user_id")
   cpf       String?   @unique
   birthDate DateTime? @map("birth_date")
+  acceptedTermsAt DateTime? @map("accepted_terms_at")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
