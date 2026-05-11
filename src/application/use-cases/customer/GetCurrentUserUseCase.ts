@@ -11,6 +11,8 @@ interface CurrentUserResponse {
   phone: string | null;
   cpf: string | null;
   birthDate: Date | null;
+  emailVerified: boolean;
+  acceptedTerms: boolean;
   createdAt: Date;
 }
 
@@ -43,6 +45,8 @@ export class GetCurrentUserUseCase {
       phone: user.phone ?? null,
       cpf: customer.cpf ?? null,
       birthDate: customer.birthDate ?? null,
+      emailVerified: !!user.emailVerifiedAt,
+      acceptedTerms: !!customer.acceptedTermsAt,
       createdAt: customer.createdAt,
     };
   }

@@ -4,10 +4,12 @@ import type { IStoreSettingsRepository } from "../../../domain/repositories/ISto
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { ForgotPasswordDTO } from "../../dtos/AuthDTO.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import { RESET_PASSWORD_TOKEN_LIFETIME_MS } from "../../../shared/auth-constants.js";
 import {
   baseLayout,
   escapeHtmlValue,
 } from "../../../infrastructure/providers/mail/templates/baseLayout.js";
+import { getStoreInfoForEmail } from "../../../infrastructure/providers/mail/storeInfoForEmail.js";
 import { randomUUID } from "crypto";
 
 @injectable()
@@ -26,7 +28,7 @@ export class ForgotPasswordUseCase {
 
     if (user) {
       const token = randomUUID();
-      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      const expiry = new Date(Date.now() + RESET_PASSWORD_TOKEN_LIFETIME_MS);
 
       user.setResetToken(token, expiry);
       await this.userRepository.update(user);
@@ -35,19 +37,7 @@ export class ForgotPasswordUseCase {
       const resetLink = `${frontendUrl}/reset-password?token=${token}`;
       const safeName = escapeHtmlValue(user.name);
 
-      // Best-effort fetch dos settings — se falhar, manda o email com fallback do baseLayout
-      let storeInfo;
-      try {
-        const store = await this.storeSettingsRepository.get();
-        storeInfo = {
-          helpEmail: store.email,
-          socialInstagram: store.socialInstagram || undefined,
-          socialFacebook: store.socialFacebook || undefined,
-          socialTiktok: store.socialTiktok || undefined,
-        };
-      } catch (err) {
-        console.error("[ForgotPassword] Falha ao buscar StoreSettings (segue com fallback):", err);
-      }
+      const storeInfo = await getStoreInfoForEmail(this.storeSettingsRepository);
 
       const content = `
         <h1 style="margin:0 0 16px; font-size:22px; font-weight:700; color:#18181b; line-height:1.3;">Vamos redefinir sua senha</h1>

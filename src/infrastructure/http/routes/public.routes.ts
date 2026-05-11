@@ -43,6 +43,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.post("/auth/logout", authController.logout);
   app.post("/auth/forgot-password", authRateLimit, authController.forgotPassword);
   app.post("/auth/reset-password", authRateLimit, authController.resetPassword);
+  app.get("/auth/verify-email", authController.verifyEmail);
 
   // Products (public)
   app.get("/products", productController.list);
@@ -70,10 +71,25 @@ export async function publicRoutes(app: FastifyInstance) {
   // === Rotas autenticadas (customer) ===
   const customerAuth = authMiddleware([UserRole.CUSTOMER, UserRole.ADMIN]);
 
+  // Refresh: cookie atual valida (preHandler), backend renova silenciosamente
+  app.post("/auth/refresh", { preHandler: customerAuth }, authController.refresh);
+  // Resend de email: rate limit pra evitar spam (3 emails/min/IP)
+  app.post(
+    "/auth/resend-verification",
+    {
+      preHandler: customerAuth,
+      config: { rateLimit: { max: 3, timeWindow: "1 minute" } },
+    },
+    authController.resendVerification,
+  );
+
   // Profile
   app.get("/me", { preHandler: customerAuth }, profileController.me);
   app.put("/me", { preHandler: customerAuth }, profileController.updateProfile);
   app.post("/me/change-password", { preHandler: customerAuth }, profileController.changePassword);
+  app.post("/me/accept-terms", { preHandler: customerAuth }, profileController.acceptTerms);
+  app.delete("/me", { preHandler: customerAuth }, profileController.deleteAccount);
+  app.get("/me/export", { preHandler: customerAuth }, profileController.exportData);
 
   // Addresses
   app.get("/addresses", { preHandler: customerAuth }, addressController.list);

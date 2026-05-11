@@ -3,6 +3,9 @@ import { container } from "tsyringe";
 import { GetCurrentUserUseCase } from "../../../application/use-cases/customer/GetCurrentUserUseCase.js";
 import { UpdateProfileUseCase } from "../../../application/use-cases/customer/UpdateProfileUseCase.js";
 import { ChangePasswordUseCase } from "../../../application/use-cases/customer/ChangePasswordUseCase.js";
+import { AcceptTermsUseCase } from "../../../application/use-cases/customer/AcceptTermsUseCase.js";
+import { DeleteAccountUseCase } from "../../../application/use-cases/customer/DeleteAccountUseCase.js";
+import { ExportDataUseCase } from "../../../application/use-cases/customer/ExportDataUseCase.js";
 import { UpdateProfileSchema, ChangePasswordSchema } from "../../../application/dtos/ProfileDTO.js";
 
 export class ProfileController {
@@ -18,6 +21,8 @@ export class ProfileController {
       phone: profile.phone,
       cpf: profile.cpf,
       birthDate: profile.birthDate?.toISOString() ?? null,
+      emailVerified: profile.emailVerified,
+      acceptedTerms: profile.acceptedTerms,
       createdAt: profile.createdAt.toISOString(),
     });
   }
@@ -46,5 +51,32 @@ export class ProfileController {
     await changePasswordUseCase.execute(request.user.id, data);
 
     return reply.send({ message: "Senha atualizada com sucesso" });
+  }
+
+  async acceptTerms(request: FastifyRequest, reply: FastifyReply) {
+    const acceptTermsUseCase = container.resolve(AcceptTermsUseCase);
+    const result = await acceptTermsUseCase.execute(request.user.id);
+    return reply.send(result);
+  }
+
+  async deleteAccount(request: FastifyRequest, reply: FastifyReply) {
+    const deleteAccountUseCase = container.resolve(DeleteAccountUseCase);
+    await deleteAccountUseCase.execute(request.user.id);
+    // Limpa cookie de auth (logout automático)
+    const isProd = process.env.NODE_ENV === "production";
+    reply.clearCookie("auth_token", {
+      path: "/",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+    });
+    return reply.send({ message: "Conta excluída com sucesso" });
+  }
+
+  async exportData(request: FastifyRequest, reply: FastifyReply) {
+    const exportDataUseCase = container.resolve(ExportDataUseCase);
+    const data = await exportDataUseCase.execute(request.user.id);
+    reply.header("Content-Disposition", 'attachment; filename="meus-dados.json"');
+    reply.header("Content-Type", "application/json");
+    return reply.send(data);
   }
 }

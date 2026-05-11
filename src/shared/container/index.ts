@@ -148,4 +148,8 @@ container.registerSingleton<IMailProvider>("MailProvider", NodemailerMailProvide
 container.registerSingleton<IShippingProvider>("ShippingProvider", MelhorEnvioProvider);
 container.registerSingleton<IMarketplaceProvider>("MarketplaceProvider", MercadoLivreProvider);
 
+// Use cases registrados explicitamente (necessário pra @injectable() ser resolvido por nome)
+import { SendVerificationEmailUseCase } from "../../application/use-cases/auth/SendVerificationEmailUseCase.js";
+container.registerSingleton("SendVerificationEmailUseCase", SendVerificationEmailUseCase);
+
 export { container };

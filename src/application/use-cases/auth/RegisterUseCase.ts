@@ -6,6 +6,8 @@ import { Email } from "../../../domain/value-objects/Email.js";
 import { UserRole } from "../../../domain/enums/index.js";
 import { RegisterDTO } from "../../dtos/AuthDTO.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import { SendVerificationEmailUseCase } from "./SendVerificationEmailUseCase.js";
+import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import { randomUUID } from "crypto";
 
 interface RegisterResponse {
@@ -24,6 +26,8 @@ export class RegisterUseCase {
     private userRepository: IUserRepository,
     @inject("HashProvider")
     private hashProvider: IHashProvider,
+    @inject("SendVerificationEmailUseCase")
+    private sendVerificationEmailUseCase: SendVerificationEmailUseCase,
   ) { }
 
   async execute(data: RegisterDTO): Promise<RegisterResponse> {
@@ -52,6 +56,19 @@ export class RegisterUseCase {
     });
 
     const createdUser = await this.userRepository.create(user);
+
+    // Marca aceite de termos no Customer (criado automaticamente pelo PrismaUserRepository)
+    if (data.acceptedTerms) {
+      await prisma.customer.update({
+        where: { userId: createdUser.id },
+        data: { acceptedTermsAt: new Date() },
+      });
+    }
+
+    // Dispara email de verificação (best-effort, não bloqueia o fluxo)
+    this.sendVerificationEmailUseCase.execute(createdUser.id).catch((err) => {
+      console.error("[Register] Falha ao enviar email de verificação:", err);
+    });
 
     return {
       user: {

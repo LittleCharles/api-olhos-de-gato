@@ -24,6 +24,12 @@ export class PrismaUserRepository implements IUserRepository {
     return this.mapToEntity(user);
   }
 
+  async findByEmailVerifyToken(token: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({ where: { emailVerifyToken: token } });
+    if (!user) return null;
+    return this.mapToEntity(user);
+  }
+
   async findAllByRole(
     role: UserRole,
     pagination: { page: number; limit: number },
@@ -86,12 +92,16 @@ export class PrismaUserRepository implements IUserRepository {
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
+        email: user.email.getValue(),
         name: user.name,
         phone: user.phone,
         passwordHash: user.passwordHash,
         isActive: user.isActive,
         resetToken: user.resetToken ?? null,
         resetTokenExpiry: user.resetTokenExpiry ?? null,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
+        emailVerifyToken: user.emailVerifyToken ?? null,
+        emailVerifyExpiry: user.emailVerifyExpiry ?? null,
       },
     });
     return this.mapToEntity(updated);
@@ -113,6 +123,9 @@ export class PrismaUserRepository implements IUserRepository {
       isMaster: data.isMaster ?? false,
       resetToken: data.resetToken,
       resetTokenExpiry: data.resetTokenExpiry,
+      emailVerifiedAt: data.emailVerifiedAt,
+      emailVerifyToken: data.emailVerifyToken,
+      emailVerifyExpiry: data.emailVerifyExpiry,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });

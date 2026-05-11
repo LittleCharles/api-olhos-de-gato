@@ -6,6 +6,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByResetToken(token: string): Promise<User | null>;
+  findByEmailVerifyToken(token: string): Promise<User | null>;
   findAllByRole(
     role: UserRole,
     pagination: { page: number; limit: number },

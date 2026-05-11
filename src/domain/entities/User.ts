@@ -12,6 +12,9 @@ export interface UserProps {
   isMaster: boolean;
   resetToken?: string | null;
   resetTokenExpiry?: Date | null;
+  emailVerifiedAt?: Date | null;
+  emailVerifyToken?: string | null;
+  emailVerifyExpiry?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +71,31 @@ export class User {
     return this.props.resetTokenExpiry;
   }
 
+  get emailVerifiedAt(): Date | null | undefined {
+    return this.props.emailVerifiedAt;
+  }
+
+  get emailVerifyToken(): string | null | undefined {
+    return this.props.emailVerifyToken;
+  }
+
+  get emailVerifyExpiry(): Date | null | undefined {
+    return this.props.emailVerifyExpiry;
+  }
+
+  setEmailVerifyToken(token: string, expiry: Date): void {
+    this.props.emailVerifyToken = token;
+    this.props.emailVerifyExpiry = expiry;
+    this.props.updatedAt = new Date();
+  }
+
+  markEmailVerified(): void {
+    this.props.emailVerifiedAt = new Date();
+    this.props.emailVerifyToken = null;
+    this.props.emailVerifyExpiry = null;
+    this.props.updatedAt = new Date();
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -109,5 +137,8 @@ export class User {
   updatePasswordHash(hash: string): void {
     this.props.passwordHash = hash;
     this.clearResetToken();
+    // Trocar senha invalida tokens de email pendentes (consistência)
+    this.props.emailVerifyToken = null;
+    this.props.emailVerifyExpiry = null;
   }
 }

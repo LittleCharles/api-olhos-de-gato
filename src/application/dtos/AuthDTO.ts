@@ -9,6 +9,9 @@ export const RegisterSchema = z.object({
     .regex(/^\d{10,11}$/, "Telefone deve ter 10 ou 11 dígitos sem máscara")
     .optional()
     .nullable(),
+  acceptedTerms: z.literal(true, {
+    message: "Você precisa aceitar os termos de uso",
+  }),
 });
 
 export const LoginSchema = z.object({

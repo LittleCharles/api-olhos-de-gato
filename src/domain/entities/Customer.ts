@@ -6,6 +6,7 @@ export interface CustomerProps {
   phone?: string | null;
   cpf?: string | null;
   birthDate?: Date | null;
+  acceptedTermsAt?: Date | null;
   isActive: boolean;
   totalOrders: number;
   totalSpent: number;
@@ -28,6 +29,7 @@ export class Customer {
   get phone(): string | null | undefined { return this.props.phone; }
   get cpf(): string | null | undefined { return this.props.cpf; }
   get birthDate(): Date | null | undefined { return this.props.birthDate; }
+  get acceptedTermsAt(): Date | null | undefined { return this.props.acceptedTermsAt; }
   get isActive(): boolean { return this.props.isActive; }
   get totalOrders(): number { return this.props.totalOrders; }
   get totalSpent(): number { return this.props.totalSpent; }

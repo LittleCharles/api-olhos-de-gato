@@ -146,6 +146,7 @@ export class PrismaCustomerRepository implements ICustomerRepository {
       phone: data.user.phone,
       cpf: data.cpf,
       birthDate: data.birthDate,
+      acceptedTermsAt: data.acceptedTermsAt,
       isActive: data.user.isActive,
       totalOrders: orders.length,
       totalSpent,
