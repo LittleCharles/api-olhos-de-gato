@@ -4,11 +4,17 @@ import { Order } from "@domain/entities/Order";
 import { PaymentMethod, OrderStatus, PaymentStatus } from "@domain/enums/index";
 import { AppError } from "@shared/errors/AppError";
 import type { IMailProvider } from "@application/interfaces/IMailProvider";
+import type { IStoreSettingsRepository } from "@domain/repositories/IStoreSettingsRepository";
+import type { IAddressRepository } from "@domain/repositories/IAddressRepository";
+import type { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
 
 // Mock the prisma client
 vi.mock("@infrastructure/database/prisma/client", () => ({
   prisma: {
     $transaction: vi.fn(),
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -18,12 +24,40 @@ const mockMailProvider: IMailProvider = {
   send: vi.fn(),
 };
 
+const mockStoreSettingsRepository: IStoreSettingsRepository = {
+  get: vi.fn(),
+  upsert: vi.fn(),
+} as unknown as IStoreSettingsRepository;
+
+const mockAddressRepository: IAddressRepository = {
+  findById: vi.fn(),
+} as unknown as IAddressRepository;
+
+const mockCustomerRepository: ICustomerRepository = {
+  findById: vi.fn(),
+} as unknown as ICustomerRepository;
+
 describe("CreateOrderUseCase", () => {
   let sut: CreateOrderUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    sut = new CreateOrderUseCase(mockMailProvider);
+    // Default: customer com cadastro completo + email verificado (passa pelos guards)
+    vi.mocked(mockCustomerRepository.findById).mockResolvedValue({
+      id: "customer-1",
+      userId: "user-1",
+      cpf: "12345678900",
+      phone: "11999999999",
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      emailVerifiedAt: new Date(),
+    } as any);
+    sut = new CreateOrderUseCase(
+      mockMailProvider,
+      mockStoreSettingsRepository,
+      mockAddressRepository,
+      mockCustomerRepository,
+    );
   });
 
   function setupTransaction(cart: any, productUpdates: any[] = []) {

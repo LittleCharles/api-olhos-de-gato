@@ -52,6 +52,18 @@ export class CreateOrderUseCase {
       );
     }
 
+    // Email verification (LGPD/anti-spam)
+    const customerUser = await prisma.user.findUnique({
+      where: { id: customer.userId },
+      select: { emailVerifiedAt: true },
+    });
+    if (!customerUser?.emailVerifiedAt) {
+      throw new AppError(
+        "Confirme seu email antes de finalizar a compra. Verifique sua caixa de entrada.",
+        400,
+      );
+    }
+
     // Ownership check: prevent IDOR — addressId must belong to the customer placing the order
     if (input.addressId) {
       const address = await this.addressRepository.findById(input.addressId);
