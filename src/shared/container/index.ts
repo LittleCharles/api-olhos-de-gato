@@ -62,7 +62,7 @@ import { LocalStorageProvider } from "../../infrastructure/providers/storage/Loc
 import { R2StorageProvider } from "../../infrastructure/providers/storage/R2StorageProvider.js";
 
 import { IMailProvider } from "../../application/interfaces/IMailProvider.js";
-import { NodemailerMailProvider } from "../../infrastructure/providers/mail/NodemailerMailProvider.js";
+import { MailtrapHttpMailProvider } from "../../infrastructure/providers/mail/MailtrapHttpMailProvider.js";
 
 import { IShippingProvider } from "../../application/interfaces/IShippingProvider.js";
 import { MelhorEnvioProvider } from "../../infrastructure/providers/shipping/MelhorEnvioProvider.js";
@@ -144,7 +144,7 @@ container.registerSingleton<IBrandRepository>(
 container.registerSingleton<IHashProvider>("HashProvider", BcryptHashProvider);
 const storageProvider = process.env.STORAGE_PROVIDER === "r2" ? R2StorageProvider : LocalStorageProvider;
 container.registerSingleton<IStorageProvider>("StorageProvider", storageProvider);
-container.registerSingleton<IMailProvider>("MailProvider", NodemailerMailProvider);
+container.registerSingleton<IMailProvider>("MailProvider", MailtrapHttpMailProvider);
 container.registerSingleton<IShippingProvider>("ShippingProvider", MelhorEnvioProvider);
 container.registerSingleton<IMarketplaceProvider>("MarketplaceProvider", MercadoLivreProvider);
 

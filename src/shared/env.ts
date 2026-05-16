@@ -16,10 +16,7 @@ const envSchema = z.object({
 });
 
 const MAIL_KEYS = [
-  "MAIL_HOST",
-  "MAIL_PORT",
-  "MAIL_USER",
-  "MAIL_PASS",
+  "MAILTRAP_API_TOKEN",
   "MAIL_FROM",
 ] as const;
 
@@ -28,10 +25,7 @@ const PROD_REQUIRED = [
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "CORS_ORIGIN",
-  "MAIL_HOST",
-  "MAIL_PORT",
-  "MAIL_USER",
-  "MAIL_PASS",
+  "MAILTRAP_API_TOKEN",
   "MAIL_FROM",
 ] as const;
 
@@ -47,9 +41,13 @@ export function validateEnv() {
   }
 
   const isProd = result.data.NODE_ENV === "production";
+  const isSandboxMail = (process.env.MAILTRAP_MODE || "sandbox").toLowerCase() !== "live";
 
   if (isProd) {
-    const missing = PROD_REQUIRED.filter((k) => !process.env[k]);
+    const missing: string[] = PROD_REQUIRED.filter((k) => !process.env[k]);
+    if (isSandboxMail && !process.env.MAILTRAP_INBOX_ID) {
+      missing.push("MAILTRAP_INBOX_ID");
+    }
     if (missing.length > 0) {
       console.error(
         `[env] Envs obrigatórias em produção ausentes: ${missing.join(", ")}`,
@@ -69,7 +67,10 @@ export function validateEnv() {
       process.exit(1);
     }
   } else {
-    const missingMail = MAIL_KEYS.filter((k) => !process.env[k]);
+    const missingMail: string[] = MAIL_KEYS.filter((k) => !process.env[k]);
+    if (isSandboxMail && !process.env.MAILTRAP_INBOX_ID) {
+      missingMail.push("MAILTRAP_INBOX_ID");
+    }
     if (missingMail.length > 0) {
       console.warn(
         `[env] Envs de email ausentes (${missingMail.join(", ")}). Emails NÃO serão enviados.`,
