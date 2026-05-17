@@ -84,7 +84,10 @@ export function baseLayout({
   const frontend = frontendBase();
   const helpEmail = storeInfo?.helpEmail || "contato@olhosdegato.com.br";
   const helpUrl = storeInfo?.helpUrl || `${frontend}/central-ajuda`;
-  const logoUrl = storeInfo?.logoUrl || `${frontend}/LogosOlhosDeGatosTexto.png`;
+  // Hardcoded pra prod (publico). FRONTEND_URL aponta pra staging em dev, e
+  // staging tem Vercel Auth ativa -> Mailtrap recebe 401 em vez de PNG. Logo
+  // e asset estatico, nao muda por ambiente, entao sempre busca de prod.
+  const logoUrl = storeInfo?.logoUrl || "https://olhosdegato.com.br/LogoOlhosDeGatos.png";
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -94,6 +97,7 @@ export function baseLayout({
   <meta name="color-scheme" content="light only" />
   <meta name="supported-color-schemes" content="light" />
   <title>${escapeHtml(title)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet" />
 </head>
 <body style="margin:0; padding:0; background:#f4f4f5; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; color:#18181b; -webkit-font-smoothing:antialiased;">
   <div style="display:none; max-height:0; overflow:hidden; color:transparent; opacity:0;">${escapeHtml(preview)}</div>
@@ -120,7 +124,16 @@ export function baseLayout({
                     <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                       <tr>
                         <td align="left" style="vertical-align:middle;">
-                          <img src="${encodeURI(logoUrl)}" alt="Olhos de Gato" height="44" style="height:44px; width:auto; display:block; border:0; outline:none; text-decoration:none;" />
+                          <table cellpadding="0" cellspacing="0" role="presentation" style="display:inline-table;">
+                            <tr>
+                              <td style="padding-right:10px; vertical-align:middle;">
+                                <img src="${encodeURI(logoUrl)}" alt="Olhos de Gato" width="44" height="44" style="width:44px; height:44px; display:block; border:0; outline:none; text-decoration:none;" />
+                              </td>
+                              <td style="vertical-align:middle;">
+                                <span style="font-family:'Sacramento','Brush Script MT','Lucida Handwriting',cursive; color:#F9B0B3; font-size:34px; line-height:1; letter-spacing:0.5px; white-space:nowrap;">Olhos de Gato</span>
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                         <td align="right" style="vertical-align:middle;">
                           <a href="${encodeURI(helpUrl)}" style="color:#71717a; font-size:13px; text-decoration:none;">Central de Atendimento</a>
