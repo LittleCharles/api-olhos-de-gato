@@ -65,7 +65,7 @@ export class CustomerOrderController {
       });
     }
 
-    const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
+    const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
       items: checkoutItems,
       customerEmail: user?.email?.getValue(),
@@ -77,7 +77,7 @@ export class CustomerOrderController {
 
     return reply.status(201).send({
       ...OrderPresenter.toHTTP(order),
-      checkoutUrl: sessionUrl,
+      clientSecret,
     });
   }
 
@@ -138,7 +138,7 @@ export class CustomerOrderController {
       });
     }
 
-    const { sessionId, sessionUrl } = await stripeService.createCheckoutSession({
+    const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
       items: checkoutItems,
       customerEmail: user?.email?.getValue(),
@@ -148,7 +148,7 @@ export class CustomerOrderController {
     const orderRepo = container.resolve<IOrderRepository>("OrderRepository");
     await orderRepo.updateStripeSessionId(order.id, sessionId);
 
-    return reply.send({ checkoutUrl: sessionUrl });
+    return reply.send({ clientSecret });
   }
 
   async createReview(request: FastifyRequest, reply: FastifyReply) {

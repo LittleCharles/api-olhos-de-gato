@@ -48,6 +48,7 @@ export class StripeService {
     }
 
     const session = await stripe.checkout.sessions.create({
+      ui_mode: "embedded",
       payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems,
@@ -57,13 +58,22 @@ export class StripeService {
         : {}),
       // Janela curta libera estoque rápido se o cliente abandonar; Stripe aceita 30min–24h.
       expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
-      success_url: `${frontendUrl}/pedidos?payment=success&order=${input.orderId}`,
-      cancel_url: `${frontendUrl}/checkout?payment=cancelled`,
+      locale: "pt-BR",
+      // Já coletamos CPF/telefone no cadastro — não pedir de novo no Stripe
+      phone_number_collection: { enabled: false },
+      billing_address_collection: "auto",
+      custom_text: {
+        submit: {
+          message: "Acompanhe seu pedido em Meus Pedidos após o pagamento.",
+        },
+      },
+      // Embedded: usuário continua no nosso domínio; Stripe redireciona o iframe pra return_url ao finalizar
+      return_url: `${frontendUrl}/pedidos?payment=success&order=${input.orderId}`,
     });
 
     return {
       sessionId: session.id,
-      sessionUrl: session.url!,
+      clientSecret: session.client_secret!,
     };
   }
 
