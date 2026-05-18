@@ -55,6 +55,8 @@ export class StripeService {
       ...(input.customerEmail
         ? { customer_email: input.customerEmail }
         : {}),
+      // Janela curta libera estoque rápido se o cliente abandonar; Stripe aceita 30min–24h.
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
       success_url: `${frontendUrl}/pedidos?payment=success&order=${input.orderId}`,
       cancel_url: `${frontendUrl}/checkout?payment=cancelled`,
     });

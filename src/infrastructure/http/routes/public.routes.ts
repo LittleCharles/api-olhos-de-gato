@@ -113,6 +113,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.post("/orders", { preHandler: customerAuth }, customerOrderController.create);
   app.get("/orders", { preHandler: customerAuth }, customerOrderController.list);
   app.get("/orders/:id", { preHandler: customerAuth }, customerOrderController.get);
+  app.post("/orders/:id/retry-payment", { preHandler: customerAuth }, customerOrderController.retryPayment);
 
   // Reviews (submit)
   app.post("/products/:id/reviews", { preHandler: customerAuth }, customerOrderController.createReview);

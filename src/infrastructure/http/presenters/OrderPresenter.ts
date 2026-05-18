@@ -42,6 +42,7 @@ export class OrderPresenter {
     return {
       id: order.id,
       status: order.status,
+      paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
       total: order.total.getValue(),
       totalFormatted: order.total.format(),

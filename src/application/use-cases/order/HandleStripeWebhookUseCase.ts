@@ -77,11 +77,19 @@ export class HandleStripeWebhookUseCase {
         // Idempotency: skip if already processed (prevents double stock restoration)
         if (order.paymentStatus === PaymentStatus.FAILED) return;
 
-        // Atomic: payment status update + stock restoration + history log all-or-nothing
+        const isExpired = input.eventType === "checkout.session.expired";
+        const historyNote = isExpired
+          ? "Sessão Stripe expirou — pedido cancelado e estoque restaurado"
+          : "Pagamento falhou via Stripe — pedido cancelado e estoque restaurado";
+
+        // Atomic: order cancellation + stock restoration + history log all-or-nothing
         await prisma.$transaction(async (tx) => {
           await tx.order.update({
             where: { id: order.id },
-            data: { paymentStatus: PaymentStatus.FAILED },
+            data: {
+              paymentStatus: PaymentStatus.FAILED,
+              status: OrderStatus.CANCELLED,
+            },
           });
 
           for (const item of order.items) {
@@ -94,8 +102,8 @@ export class HandleStripeWebhookUseCase {
           await tx.orderStatusHistory.create({
             data: {
               orderId: order.id,
-              status: order.status,
-              notes: "Pagamento falhou via Stripe - estoque restaurado",
+              status: OrderStatus.CANCELLED,
+              notes: historyNote,
             },
           });
         });
