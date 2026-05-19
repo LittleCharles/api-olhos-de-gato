@@ -196,6 +196,14 @@ export class PrismaOrderRepository implements IOrderRepository {
         shippingCost: order.shippingCost?.getValue() ?? 0,
         shippingService: order.shippingService,
         shippingDays: order.shippingDays,
+        shippingRecipientName: order.shippingAddress?.recipientName ?? null,
+        shippingZipCode: order.shippingAddress?.zipCode ?? null,
+        shippingStreet: order.shippingAddress?.street ?? null,
+        shippingNumber: order.shippingAddress?.number ?? null,
+        shippingComplement: order.shippingAddress?.complement ?? null,
+        shippingNeighborhood: order.shippingAddress?.neighborhood ?? null,
+        shippingCity: order.shippingAddress?.city ?? null,
+        shippingState: order.shippingAddress?.state ?? null,
         items: {
           create: order.items.map((item) => ({
             id: item.id,
@@ -303,6 +311,18 @@ export class PrismaOrderRepository implements IOrderRepository {
       shippingCost: Money.create(Number(data.shippingCost ?? 0)),
       shippingService: data.shippingService,
       shippingDays: data.shippingDays,
+      shippingAddress: data.shippingStreet
+        ? {
+            recipientName: data.shippingRecipientName ?? null,
+            zipCode: data.shippingZipCode ?? "",
+            street: data.shippingStreet ?? "",
+            number: data.shippingNumber ?? "",
+            complement: data.shippingComplement ?? null,
+            neighborhood: data.shippingNeighborhood ?? "",
+            city: data.shippingCity ?? "",
+            state: data.shippingState ?? "",
+          }
+        : null,
       items,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

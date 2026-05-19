@@ -65,11 +65,33 @@ export class CreateOrderUseCase {
     }
 
     // Ownership check: prevent IDOR — addressId must belong to the customer placing the order
+    // O endereço é congelado como snapshot na Order (delivery only) pra não perder o destino
+    // se o cliente editar/deletar o Address depois.
+    let shippingAddressSnapshot: {
+      recipientName: string | null;
+      zipCode: string;
+      street: string;
+      number: string;
+      complement: string | null;
+      neighborhood: string;
+      city: string;
+      state: string;
+    } | null = null;
     if (input.addressId) {
       const address = await this.addressRepository.findById(input.addressId);
       if (!address || address.customerId !== input.customerId) {
         throw new AppError("Endereço inválido", 400);
       }
+      shippingAddressSnapshot = {
+        recipientName: customer.name || input.customerName || null,
+        zipCode: address.zipCode,
+        street: address.street,
+        number: address.number,
+        complement: address.complement ?? null,
+        neighborhood: address.neighborhood,
+        city: address.city,
+        state: address.state,
+      };
     }
 
     // All DB operations in a single transaction to guarantee atomicity
@@ -162,6 +184,14 @@ export class CreateOrderUseCase {
             shippingCost: ship.getValue(),
             shippingService: input.shippingService ?? null,
             shippingDays: input.shippingDays ?? null,
+            shippingRecipientName: shippingAddressSnapshot?.recipientName ?? null,
+            shippingZipCode: shippingAddressSnapshot?.zipCode ?? null,
+            shippingStreet: shippingAddressSnapshot?.street ?? null,
+            shippingNumber: shippingAddressSnapshot?.number ?? null,
+            shippingComplement: shippingAddressSnapshot?.complement ?? null,
+            shippingNeighborhood: shippingAddressSnapshot?.neighborhood ?? null,
+            shippingCity: shippingAddressSnapshot?.city ?? null,
+            shippingState: shippingAddressSnapshot?.state ?? null,
             items: {
               create: items.map((item) => ({
                 id: item.id,
@@ -201,6 +231,7 @@ export class CreateOrderUseCase {
           shippingCost: ship,
           shippingService: created.shippingService,
           shippingDays: created.shippingDays,
+          shippingAddress: shippingAddressSnapshot,
           items: items.map((item, idx) => ({
             ...item,
             productImage: created.items[idx]?.product?.images?.[0]?.url ?? null,

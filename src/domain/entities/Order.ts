@@ -11,6 +11,17 @@ export interface OrderItemProps {
   total: Money;
 }
 
+export interface OrderShippingAddress {
+  recipientName: string | null;
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+}
+
 export interface OrderProps {
   id: string;
   customerId: string;
@@ -27,6 +38,7 @@ export interface OrderProps {
   shippingCost?: Money;
   shippingService?: string | null;
   shippingDays?: number | null;
+  shippingAddress?: OrderShippingAddress | null;
   items: OrderItemProps[];
   createdAt: Date;
   updatedAt: Date;
@@ -101,6 +113,10 @@ export class Order {
 
   get shippingDays(): number | null | undefined {
     return this.props.shippingDays;
+  }
+
+  get shippingAddress(): OrderShippingAddress | null | undefined {
+    return this.props.shippingAddress;
   }
 
   get items(): OrderItemProps[] {

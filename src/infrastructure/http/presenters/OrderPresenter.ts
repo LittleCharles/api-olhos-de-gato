@@ -22,6 +22,7 @@ export class OrderPresenter {
       shippingCostFormatted: order.shippingCost?.format() ?? "R$ 0,00",
       shippingService: order.shippingService,
       shippingDays: order.shippingDays,
+      shippingAddress: order.shippingAddress ?? null,
       items: order.items.map((item) => ({
         id: item.id,
         productId: item.productId,
