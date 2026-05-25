@@ -118,10 +118,10 @@ export async function publicRoutes(app: FastifyInstance) {
   // Reviews (submit)
   app.post("/products/:id/reviews", { preHandler: customerAuth }, customerOrderController.createReview);
 
-  // AbacatePay Webhook (sem auth) — validação por ?webhookSecret= + HMAC (precisa do raw body)
-  app.post("/webhooks/abacatepay", {
+  // Stripe Webhook (no auth, raw body)
+  app.post("/webhooks/stripe", {
     config: { rawBody: true },
-  }, webhookController.abacatePayWebhook);
+  }, webhookController.stripeWebhook);
 
   // Mercado Livre Webhook (no auth — ML sends notifications here)
   app.post("/webhooks/mercado-livre", marketplaceWebhookController.handleNotification);

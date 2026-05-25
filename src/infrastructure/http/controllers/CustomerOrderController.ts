@@ -12,7 +12,7 @@ import {
 } from "../../../application/dtos/CustomerOrderDTO.js";
 import { OrderPresenter } from "../presenters/OrderPresenter.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { abacatePayService } from "../../services/AbacatePayService.js";
+import { stripeService } from "../../services/StripeService.js";
 import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
 import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
 import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
@@ -47,45 +47,35 @@ export class CustomerOrderController {
       shippingServiceId: data.shippingServiceId,
     });
 
-    const customerRepo = container.resolve<ICustomerRepository>("CustomerRepository");
-    const customer = await customerRepo.findById(customerId);
-
-    // Produtos inline (a AbacatePay cria o produto pelo externalId). Frete vai como uma linha.
-    const products = order.items.map((item) => ({
-      externalId: `${order.id}:${item.productId}`,
+    const checkoutItems = order.items.map((item) => ({
       name: item.productName,
       quantity: item.quantity,
       unitPriceCents: Math.round(item.unitPrice.getValue() * 100),
     }));
 
+    // Add shipping as line item if present
     const shippingCostValue = order.shippingCost?.getValue() ?? 0;
     if (shippingCostValue > 0) {
-      products.push({
-        externalId: `${order.id}:frete`,
+      checkoutItems.push({
         name: `Frete (${order.shippingService || "Envio"})`,
         quantity: 1,
         unitPriceCents: Math.round(shippingCostValue * 100),
       });
     }
 
-    const { id: sessionId, url: paymentUrl } = await abacatePayService.createCheckout({
+    const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
-      products,
-      customer: {
-        name: user?.name,
-        email: user?.email?.getValue() ?? "",
-        cellphone: user?.phone ?? undefined,
-        taxId: customer?.cpf ?? undefined,
-      },
+      items: checkoutItems,
+      customerEmail: user?.email?.getValue(),
     });
 
-    // Salva o id da cobrança no pedido (pra reconciliar no webhook)
+    // Save stripe session id on order
     const orderRepo = container.resolve<IOrderRepository>("OrderRepository");
     await orderRepo.updatePaymentSessionId(order.id, sessionId);
 
     return reply.status(201).send({
       ...OrderPresenter.toHTTP(order),
-      paymentUrl,
+      clientSecret,
     });
   }
 
@@ -131,11 +121,7 @@ export class CustomerOrderController {
     const userRepo = container.resolve<IUserRepository>("UserRepository");
     const user = await userRepo.findById(request.user.id);
 
-    const customerRepo = container.resolve<ICustomerRepository>("CustomerRepository");
-    const customer = await customerRepo.findById(customerId);
-
-    const products = order.items.map((item) => ({
-      externalId: `${order.id}:${item.productId}`,
+    const checkoutItems = order.items.map((item) => ({
       name: item.productName,
       quantity: item.quantity,
       unitPriceCents: Math.round(item.unitPrice.getValue() * 100),
@@ -143,30 +129,24 @@ export class CustomerOrderController {
 
     const shippingCostValue = order.shippingCost?.getValue() ?? 0;
     if (shippingCostValue > 0) {
-      products.push({
-        externalId: `${order.id}:frete`,
+      checkoutItems.push({
         name: `Frete (${order.shippingService || "Envio"})`,
         quantity: 1,
         unitPriceCents: Math.round(shippingCostValue * 100),
       });
     }
 
-    const { id: sessionId, url: paymentUrl } = await abacatePayService.createCheckout({
+    const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
-      products,
-      customer: {
-        name: user?.name,
-        email: user?.email?.getValue() ?? "",
-        cellphone: user?.phone ?? undefined,
-        taxId: customer?.cpf ?? undefined,
-      },
+      items: checkoutItems,
+      customerEmail: user?.email?.getValue(),
     });
 
-    // Nova cobrança — a anterior fica órfã na AbacatePay e expira sozinha
+    // Sobrescreve o sessionId antigo — a session anterior fica órfã na Stripe e expira sozinha
     const orderRepo = container.resolve<IOrderRepository>("OrderRepository");
     await orderRepo.updatePaymentSessionId(order.id, sessionId);
 
-    return reply.send({ paymentUrl });
+    return reply.send({ clientSecret });
   }
 
   async createReview(request: FastifyRequest, reply: FastifyReply) {

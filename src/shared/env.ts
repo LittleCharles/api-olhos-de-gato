@@ -8,8 +8,8 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().optional(),
   STORAGE_PROVIDER: z.enum(["local", "r2"]).default("local"),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
-  ABACATEPAY_API_KEY: z.string().optional(),
-  ABACATEPAY_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   ML_APP_ID: z.string().optional(),
   ML_CLIENT_SECRET: z.string().optional(),
   MELHOR_ENVIO_TOKEN: z.string().optional(),
@@ -24,8 +24,8 @@ const MAIL_KEYS = [
 
 const PROD_REQUIRED = [
   "FRONTEND_URL",
-  "ABACATEPAY_API_KEY",
-  "ABACATEPAY_WEBHOOK_SECRET",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
   "CORS_ORIGIN",
   "MAILTRAP_API_TOKEN",
   "MAIL_FROM",
@@ -83,12 +83,12 @@ export function validateEnv() {
         `[env] Envs de email ausentes (${missingMail.join(", ")}). Emails NÃO serão enviados.`,
       );
     }
-    const missingAbacate = ["ABACATEPAY_API_KEY"].filter(
+    const missingStripe = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"].filter(
       (k) => !process.env[k],
     );
-    if (missingAbacate.length > 0) {
+    if (missingStripe.length > 0) {
       console.warn(
-        `[env] Env AbacatePay ausente em dev (${missingAbacate.join(", ")}). Fluxo de pagamento não funcionará.`,
+        `[env] Envs Stripe ausentes em dev (${missingStripe.join(", ")}). Fluxo de pagamento não funcionará.`,
       );
     }
   }
