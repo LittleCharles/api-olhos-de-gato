@@ -9,7 +9,9 @@ import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import { buildPaymentConfirmedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 interface HandlePaymentEventInput {
-  // Evento do webhook AbacatePay: "billing.paid" (pago) | "billing.cancelled" | "billing.expired" (falha).
+  // Evento do webhook v2 da AbacatePay:
+  // "checkout.completed" (pago) | "checkout.lost" (abandono/expiração) |
+  // "checkout.refunded" (reembolso) | "checkout.disputed" (disputa).
   event: string;
   orderId: string;
 }
@@ -34,7 +36,7 @@ export class HandlePaymentWebhookUseCase {
     if (!order) return;
 
     // Pagamento confirmado
-    if (input.event === "billing.paid") {
+    if (input.event === "checkout.completed") {
       // Idempotência: ignora se já está pago
       if (order.paymentStatus === PaymentStatus.PAID) return;
 
@@ -72,22 +74,29 @@ export class HandlePaymentWebhookUseCase {
       return;
     }
 
-    // Cobrança cancelada/expirada → cancela pedido + restaura estoque
-    if (input.event === "billing.cancelled" || input.event === "billing.expired") {
+    // Abandono/expiração (checkout.lost) ou reembolso (checkout.refunded) → cancela + restaura estoque
+    if (input.event === "checkout.lost" || input.event === "checkout.refunded") {
+      const isRefund = input.event === "checkout.refunded";
+      const targetPaymentStatus = isRefund ? PaymentStatus.REFUNDED : PaymentStatus.FAILED;
+
       // Idempotência: ignora se já processado (evita restaurar estoque duas vezes)
-      if (order.paymentStatus === PaymentStatus.FAILED) return;
+      if (
+        order.paymentStatus === targetPaymentStatus ||
+        order.status === OrderStatus.CANCELLED
+      ) {
+        return;
+      }
 
-      const isExpired = input.event === "billing.expired";
-      const historyNote = isExpired
-        ? "Cobrança AbacatePay expirou — pedido cancelado e estoque restaurado"
-        : "Cobrança AbacatePay cancelada — pedido cancelado e estoque restaurado";
+      const historyNote = isRefund
+        ? "Pagamento reembolsado via AbacatePay — pedido cancelado e estoque restaurado"
+        : "Cobrança não concluída (checkout.lost) — pedido cancelado e estoque restaurado";
 
-      // Atômico: cancelamento + restauração de estoque + log de histórico, tudo ou nada
+      // Atômico: cancelamento + restauração de estoque + histórico, tudo ou nada
       await prisma.$transaction(async (tx) => {
         await tx.order.update({
           where: { id: order.id },
           data: {
-            paymentStatus: PaymentStatus.FAILED,
+            paymentStatus: targetPaymentStatus,
             status: OrderStatus.CANCELLED,
           },
         });
@@ -107,6 +116,9 @@ export class HandlePaymentWebhookUseCase {
           },
         });
       });
+      return;
     }
+
+    // checkout.disputed e outros eventos → sem ação automática.
   }
 }
