@@ -62,6 +62,7 @@ export class AbacatePayService {
       name: `Pedido ${input.orderId.slice(0, 8)}`,
       description: "Pedido Olhos de Gato",
       price: totalCents,
+      currency: "BRL",
       externalId: `order-${input.orderId}`,
     });
 
