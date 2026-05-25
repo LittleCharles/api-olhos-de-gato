@@ -50,6 +50,9 @@ import { PrismaMarketplaceAccountRepository } from "../../infrastructure/databas
 import { IMarketplaceListingRepository } from "../../domain/repositories/IMarketplaceListingRepository.js";
 import { PrismaMarketplaceListingRepository } from "../../infrastructure/database/repositories/PrismaMarketplaceListingRepository.js";
 
+import { IOAuthStateRepository } from "../../domain/repositories/IOAuthStateRepository.js";
+import { PrismaOAuthStateRepository } from "../../infrastructure/database/repositories/PrismaOAuthStateRepository.js";
+
 import { IBrandRepository } from "../../domain/repositories/IBrandRepository.js";
 import { PrismaBrandRepository } from "../../infrastructure/database/repositories/PrismaBrandRepository.js";
 
@@ -135,6 +138,10 @@ container.registerSingleton<IMarketplaceListingRepository>(
   "MarketplaceListingRepository",
   PrismaMarketplaceListingRepository,
 );
+container.registerSingleton<IOAuthStateRepository>(
+  "OAuthStateRepository",
+  PrismaOAuthStateRepository,
+);
 container.registerSingleton<IBrandRepository>(
   "BrandRepository",
   PrismaBrandRepository,
@@ -151,5 +158,8 @@ container.registerSingleton<IMarketplaceProvider>("MarketplaceProvider", Mercado
 // Use cases registrados explicitamente (necessário pra @injectable() ser resolvido por nome)
 import { SendVerificationEmailUseCase } from "../../application/use-cases/auth/SendVerificationEmailUseCase.js";
 container.registerSingleton("SendVerificationEmailUseCase", SendVerificationEmailUseCase);
+
+import { CalculateShippingUseCase } from "../../application/use-cases/shipping/CalculateShippingUseCase.js";
+container.registerSingleton("CalculateShippingUseCase", CalculateShippingUseCase);
 
 export { container };

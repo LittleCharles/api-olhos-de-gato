@@ -9,6 +9,7 @@ const ACTIVE_ORDER_STATUSES: OrderStatus[] = [
   OrderStatus.CONFIRMED,
   OrderStatus.PREPARING,
   OrderStatus.READY,
+  OrderStatus.SHIPPED,
 ];
 
 @injectable()

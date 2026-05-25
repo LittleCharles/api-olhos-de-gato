@@ -19,6 +19,7 @@ enum OrderStatus {
   CONFIRMED
   PREPARING
   READY
+  SHIPPED
   DELIVERED
   CANCELLED
 }
@@ -495,4 +496,18 @@ model MarketplaceListing {
   @@index([productId])
   @@index([status])
   @@map("marketplace_listings")
+}
+
+// CSRF/anti-takeover do fluxo OAuth: state aleatório gerado no início (admin),
+// validado e consumido (single-use) no callback antes de trocar o `code`.
+model OAuthState {
+  id          String              @id @default(uuid())
+  state       String              @unique
+  platform    MarketplacePlatform
+  adminUserId String              @map("admin_user_id")
+  expiresAt   DateTime            @map("expires_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("oauth_states")
 }

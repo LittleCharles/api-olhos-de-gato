@@ -15,10 +15,23 @@ import { fileURLToPath } from "url";
 import { routes } from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
+/**
+ * Resolve a config de trustProxy. `trustProxy: true` confiaria na cadeia
+ * X-Forwarded-For inteira, deixando o cliente forjar `request.ip` e burlar o
+ * rate-limit por IP. Aqui limitamos: por padrão confia em 1 hop (a borda do
+ * Railway). Sobrescrevível via TRUST_PROXY (nº de hops, ou CIDR/IP do proxy).
+ */
+function resolveTrustProxy(): boolean | number | string {
+  const v = process.env.TRUST_PROXY?.trim();
+  if (!v) return 1;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+
 export async function buildServer() {
   const app = Fastify({
     logger: true,
-    trustProxy: true,
+    trustProxy: resolveTrustProxy(),
   });
 
   // Raw body for Stripe webhooks (must be registered first)

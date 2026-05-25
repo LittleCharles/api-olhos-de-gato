@@ -46,10 +46,17 @@ export class OrderController {
     reply: FastifyReply,
   ) {
     const { id } = request.params;
-    const { status, notes } = UpdateOrderStatusSchema.parse(request.body);
+    const { status, notes, trackingCode } = UpdateOrderStatusSchema.parse(
+      request.body,
+    );
 
     const updateOrderStatusUseCase = container.resolve(UpdateOrderStatusUseCase);
-    const order = await updateOrderStatusUseCase.execute(id, status, notes);
+    const order = await updateOrderStatusUseCase.execute(
+      id,
+      status,
+      notes,
+      trackingCode,
+    );
 
     return reply.send(OrderPresenter.toHTTP(order));
   }

@@ -98,36 +98,6 @@ function totalsBlock(order: Order): string {
 // Builders
 // ============================================================================
 
-export function buildOrderCreatedEmail(
-  order: Order,
-  customer: CustomerInfo,
-  store: StoreInfo,
-): { subject: string; html: string } {
-  const shortId = orderShortId(order);
-  const safeName = escapeHtmlValue(customer.name || "cliente");
-  const totalStr = formatBRL(order.total.getValue());
-
-  const content = `
-    <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Pedido recebido!</h2>
-    <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
-    <p style="margin:0 0 4px; color:#3f3f46;">Seu pedido <strong>#${shortId}</strong> foi registrado. Veja os detalhes:</p>
-    ${destinationBlock(order, store)}
-    ${itemsTable(order)}
-    ${totalsBlock(order)}
-    <p style="margin:24px 0 0; color:#71717a; font-size:13px;">Você pode acompanhar o status em "Meus Pedidos" na sua conta.</p>
-  `;
-
-  return {
-    subject: `Pedido #${shortId} recebido — Olhos de Gato`,
-    html: baseLayout({
-      title: `Pedido #${shortId}`,
-      preview: `Pedido #${shortId} confirmado — total R$ ${totalStr}`,
-      content,
-      storeInfo: toBaseLayoutStoreInfo(store),
-    }),
-  };
-}
-
 export function buildPaymentConfirmedEmail(
   order: Order,
   customer: CustomerInfo,
@@ -140,17 +110,19 @@ export function buildPaymentConfirmedEmail(
     : "Vamos preparar e despachar seu pedido em breve. Você receberá o código de rastreio assim que disponível.";
 
   const content = `
-    <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Pagamento confirmado ✅</h2>
+    <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Pedido confirmado ✅</h2>
     <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
-    <p style="margin:0 0 4px; color:#3f3f46;">Recebemos o pagamento do seu pedido <strong>#${shortId}</strong>.</p>
+    <p style="margin:0 0 4px; color:#3f3f46;">Recebemos o pagamento do seu pedido <strong>#${shortId}</strong>. Veja os detalhes:</p>
     ${destinationBlock(order, store)}
-    <p style="margin:0 0 4px; color:#3f3f46;">${next}</p>
+    ${itemsTable(order)}
+    ${totalsBlock(order)}
+    <p style="margin:20px 0 0; color:#3f3f46;">${next}</p>
   `;
 
   return {
-    subject: `Pagamento confirmado — Pedido #${shortId}`,
+    subject: `Pedido #${shortId} confirmado — Olhos de Gato`,
     html: baseLayout({
-      title: `Pagamento confirmado — #${shortId}`,
+      title: `Pedido #${shortId} confirmado`,
       preview: `Pagamento do pedido #${shortId} foi confirmado`,
       content,
       storeInfo: toBaseLayoutStoreInfo(store),
@@ -160,15 +132,13 @@ export function buildPaymentConfirmedEmail(
 
 const statusCopy: Record<OrderStatus, { title: string; body: string } | null> = {
   [OrderStatus.PENDING]: null,
-  [OrderStatus.CONFIRMED]: null, // já coberto pelo webhook de pagamento
-  [OrderStatus.PREPARING]: {
-    title: "Preparando seu pedido 📦",
-    body: "Estamos separando os itens do seu pedido com todo carinho.",
-  },
+  [OrderStatus.CONFIRMED]: null, // coberto pelo email de confirmação de pedido
+  [OrderStatus.PREPARING]: null, // sem email nesta etapa (reduz volume de emails)
   [OrderStatus.READY]: {
     title: "Seu pedido está pronto! 🎉",
     body: "Você já pode passar na loja pra retirar. Confira o endereço abaixo.",
   },
+  [OrderStatus.SHIPPED]: null, // tratado por buildShippedEmail (precisa do código de rastreio)
   [OrderStatus.DELIVERED]: {
     title: "Pedido entregue ✅",
     body: "Esperamos que você e seu pet amem os produtos. Obrigado pela compra!",
@@ -218,7 +188,7 @@ export function buildStatusChangeEmail(
   };
 }
 
-export function buildTrackingEmail(
+export function buildShippedEmail(
   order: Order,
   trackingCode: string,
   customer: CustomerInfo,
@@ -230,7 +200,7 @@ export function buildTrackingEmail(
   const correiosUrl = `https://rastreamento.correios.com.br/app/index.php?codigo=${encodeURIComponent(trackingCode)}`;
 
   const content = `
-    <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Seu pedido foi despachado! 🚚</h2>
+    <h2 style="margin:0 0 16px; font-size:20px; color:#18181b;">Seu pedido foi enviado! 🚚</h2>
     <p style="margin:0 0 12px; color:#3f3f46;">Olá <strong>${safeName}</strong>,</p>
     <p style="margin:0 0 4px; color:#3f3f46;">Seu pedido <strong>#${shortId}</strong> está a caminho.</p>
     <div style="background:#fff1f2; border-left:4px solid #ec4899; padding:14px 16px; border-radius:6px; margin:20px 0;">
@@ -240,9 +210,9 @@ export function buildTrackingEmail(
   `;
 
   return {
-    subject: `Pedido #${shortId} despachado — Olhos de Gato`,
+    subject: `Pedido #${shortId} enviado — Olhos de Gato`,
     html: baseLayout({
-      title: `Pedido #${shortId} despachado`,
+      title: `Pedido #${shortId} enviado`,
       preview: `Código de rastreio: ${trackingCode}`,
       content,
       cta: { label: "Rastrear pedido", url: correiosUrl },

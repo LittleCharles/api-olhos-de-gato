@@ -20,7 +20,9 @@ function setAuthCookie(reply: FastifyReply, token: string, maxAge: number) {
   reply.setCookie("auth_token", token, {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    // Lax: front e API compartilham o mesmo domínio registrável (olhosdegato.com.br),
+    // então são same-site. Lax fecha a superfície de CSRF que o `None` abria.
+    sameSite: "lax",
     path: "/",
     maxAge,
   });
@@ -82,7 +84,7 @@ export class AuthController {
     reply.clearCookie("auth_token", {
       path: "/",
       secure: isProd,
-      sameSite: isProd ? "none" : "lax",
+      sameSite: "lax",
     });
     return reply.send({ ok: true });
   }

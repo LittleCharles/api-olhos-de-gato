@@ -36,7 +36,7 @@ export interface ExternalOrder {
 }
 
 export interface IMarketplaceProvider {
-  getAuthUrl(): string;
+  getAuthUrl(state: string): string;
   exchangeCode(code: string): Promise<TokenPair>;
   refreshToken(refreshToken: string): Promise<TokenPair>;
   createListing(product: Product, listing: MarketplaceListing, accessToken: string): Promise<ExternalListing>;

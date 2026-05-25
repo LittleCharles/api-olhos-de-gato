@@ -10,6 +10,8 @@ export const CreateOrderSchema = z.object({
 export const UpdateOrderStatusSchema = z.object({
   status: z.nativeEnum(OrderStatus),
   notes: z.string().optional(),
+  // Obrigatório quando status = SHIPPED (validado no use case); enviado junto no mesmo passo.
+  trackingCode: z.string().min(1).optional(),
 });
 
 export const AdminOrderFiltersSchema = z.object({

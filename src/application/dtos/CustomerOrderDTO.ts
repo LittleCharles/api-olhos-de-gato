@@ -7,16 +7,22 @@ export const CustomerCreateOrderSchema = z
     addressId: z.string().uuid().optional(),
     notes: z.string().optional(),
     pickupLocation: z.string().optional(),
-    // TODO(go-live+): revalidar via CalculateShippingUseCase — recotar MelhorEnvio no servidor (ver PRE_PROD_AUDIT.md)
-    shippingCost: z.number().min(0).max(999).optional(),
-    shippingService: z.string().optional(),
-    shippingDays: z.number().int().positive().optional(),
+    // Frete: o cliente só indica QUAL serviço escolheu; o preço é recotado no servidor
+    // (Melhor Envio) a partir do endereço + carrinho. Não confiamos em valor vindo do cliente.
+    shippingServiceId: z.number().int().positive().optional(),
   })
   .refine(
     (data) => Boolean(data.addressId) !== Boolean(data.pickupLocation),
     {
       message: "Informe um endereço de entrega OU um local de retirada (apenas um)",
       path: ["addressId"],
+    },
+  )
+  .refine(
+    (data) => !data.addressId || data.shippingServiceId !== undefined,
+    {
+      message: "Selecione uma opção de frete",
+      path: ["shippingServiceId"],
     },
   );
 

@@ -13,6 +13,8 @@ const envSchema = z.object({
   ML_APP_ID: z.string().optional(),
   ML_CLIENT_SECRET: z.string().optional(),
   MELHOR_ENVIO_TOKEN: z.string().optional(),
+  // nº de hops de proxy confiáveis (ou CIDR/IP). Default 1 (borda do Railway).
+  TRUST_PROXY: z.string().optional(),
 });
 
 const MAIL_KEYS = [
@@ -65,6 +67,11 @@ export function validateEnv() {
         "[env] FRONTEND_URL aponta para localhost em produção. Stripe checkout e emails de reset de senha vão quebrar.",
       );
       process.exit(1);
+    }
+    if (!process.env.TRUST_PROXY) {
+      console.warn(
+        "[env] TRUST_PROXY não definido: usando default de 1 hop. Confirme que request.ip reflete o IP real do cliente atrás do proxy do Railway (ajuste o nº de hops se necessário).",
+      );
     }
   } else {
     const missingMail: string[] = MAIL_KEYS.filter((k) => !process.env[k]);

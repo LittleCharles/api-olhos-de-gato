@@ -7,7 +7,11 @@ import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { Order } from "../../../domain/entities/Order.js";
 import { OrderStatus } from "../../../domain/enums/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { buildStatusChangeEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
+import {
+  buildStatusChangeEmail,
+  buildShippedEmail,
+  buildPaymentConfirmedEmail,
+} from "../../../infrastructure/providers/mail/templates/orderEmails.js";
 
 @injectable()
 export class UpdateOrderStatusUseCase {
@@ -24,7 +28,12 @@ export class UpdateOrderStatusUseCase {
     private mailProvider: IMailProvider,
   ) {}
 
-  async execute(id: string, status: OrderStatus, notes?: string): Promise<Order> {
+  async execute(
+    id: string,
+    status: OrderStatus,
+    notes?: string,
+    trackingCode?: string,
+  ): Promise<Order> {
     const order = await this.orderRepository.findById(id);
 
     if (!order) {
@@ -32,6 +41,17 @@ export class UpdateOrderStatusUseCase {
     }
 
     const wasCancellable = order.canBeCancelled();
+
+    // Envio exige código de rastreio — vai junto no mesmo passo (e no mesmo email).
+    if (status === OrderStatus.SHIPPED) {
+      if (!trackingCode) {
+        throw new AppError(
+          "Código de rastreio é obrigatório para marcar como enviado",
+          400,
+        );
+      }
+      order.updateTrackingCode(trackingCode);
+    }
 
     order.updateStatus(status);
 
@@ -46,26 +66,35 @@ export class UpdateOrderStatusUseCase {
       }
     }
 
-    // Best-effort status change email (CONFIRMED is handled by Stripe webhook)
-    if (status !== OrderStatus.CONFIRMED && status !== OrderStatus.PENDING) {
+    // Email best-effort (não bloqueia a atualização). PENDING e PREPARING não disparam email.
+    if (status !== OrderStatus.PENDING && status !== OrderStatus.PREPARING) {
       try {
         const customer = await this.customerRepository.findById(updated.customerId);
         if (customer?.email) {
           const store = await this.storeSettingsRepository.get();
-          const email = buildStatusChangeEmail(
-            updated,
-            status,
-            { name: customer.name, email: customer.email },
-            {
-              name: store.storeName,
-              address: store.address,
-              email: store.email,
-              socialInstagram: store.socialInstagram || undefined,
-              socialFacebook: store.socialFacebook || undefined,
-              socialTiktok: store.socialTiktok || undefined,
-            },
-            notes,
-          );
+          const storeInfo = {
+            name: store.storeName,
+            address: store.address,
+            email: store.email,
+            socialInstagram: store.socialInstagram || undefined,
+            socialFacebook: store.socialFacebook || undefined,
+            socialTiktok: store.socialTiktok || undefined,
+          };
+          const customerInfo = { name: customer.name, email: customer.email };
+
+          let email: { subject: string; html: string } | null;
+          if (status === OrderStatus.SHIPPED) {
+            // Envio: email único com o código de rastreio (garantido acima).
+            email = buildShippedEmail(updated, trackingCode!, customerInfo, storeInfo);
+          } else if (status === OrderStatus.CONFIRMED) {
+            // Confirmação manual (ex.: pagamento na retirada). Pedidos Stripe recebem via
+            // webhook, que não passa por este use case — sem risco de email duplicado.
+            email = buildPaymentConfirmedEmail(updated, customerInfo, storeInfo);
+          } else {
+            // READY (retirada), DELIVERED, CANCELLED
+            email = buildStatusChangeEmail(updated, status, customerInfo, storeInfo, notes);
+          }
+
           if (email) {
             await this.mailProvider.send({ to: customer.email, ...email });
           }

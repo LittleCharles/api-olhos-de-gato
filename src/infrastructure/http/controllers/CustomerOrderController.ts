@@ -44,9 +44,7 @@ export class CustomerOrderController {
       addressId: data.addressId,
       notes: data.notes,
       pickupLocation: data.pickupLocation,
-      shippingCost: data.shippingCost,
-      shippingService: data.shippingService,
-      shippingDays: data.shippingDays,
+      shippingServiceId: data.shippingServiceId,
     });
 
     const checkoutItems = order.items.map((item) => ({

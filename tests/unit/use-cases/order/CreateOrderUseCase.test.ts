@@ -2,11 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreateOrderUseCase } from "@application/use-cases/order/CreateOrderUseCase";
 import { Order } from "@domain/entities/Order";
 import { PaymentMethod, OrderStatus, PaymentStatus } from "@domain/enums/index";
-import { AppError } from "@shared/errors/AppError";
-import type { IMailProvider } from "@application/interfaces/IMailProvider";
-import type { IStoreSettingsRepository } from "@domain/repositories/IStoreSettingsRepository";
 import type { IAddressRepository } from "@domain/repositories/IAddressRepository";
 import type { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
+import type { CalculateShippingUseCase } from "@application/use-cases/shipping/CalculateShippingUseCase";
 
 // Mock the prisma client
 vi.mock("@infrastructure/database/prisma/client", () => ({
@@ -15,19 +13,13 @@ vi.mock("@infrastructure/database/prisma/client", () => ({
     user: {
       findUnique: vi.fn(),
     },
+    cart: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
 import { prisma } from "@infrastructure/database/prisma/client";
-
-const mockMailProvider: IMailProvider = {
-  send: vi.fn(),
-};
-
-const mockStoreSettingsRepository: IStoreSettingsRepository = {
-  get: vi.fn(),
-  upsert: vi.fn(),
-} as unknown as IStoreSettingsRepository;
 
 const mockAddressRepository: IAddressRepository = {
   findById: vi.fn(),
@@ -36,6 +28,23 @@ const mockAddressRepository: IAddressRepository = {
 const mockCustomerRepository: ICustomerRepository = {
   findById: vi.fn(),
 } as unknown as ICustomerRepository;
+
+const calculateShippingExecute = vi.fn();
+const mockCalculateShipping = {
+  execute: calculateShippingExecute,
+} as unknown as CalculateShippingUseCase;
+
+const DELIVERY_ADDRESS = {
+  id: "addr-1",
+  customerId: "customer-1",
+  zipCode: "18000000",
+  street: "Rua X",
+  number: "100",
+  complement: null,
+  neighborhood: "Centro",
+  city: "Sorocaba",
+  state: "SP",
+};
 
 describe("CreateOrderUseCase", () => {
   let sut: CreateOrderUseCase;
@@ -53,10 +62,9 @@ describe("CreateOrderUseCase", () => {
       emailVerifiedAt: new Date(),
     } as any);
     sut = new CreateOrderUseCase(
-      mockMailProvider,
-      mockStoreSettingsRepository,
       mockAddressRepository,
       mockCustomerRepository,
+      mockCalculateShipping,
     );
   });
 
@@ -293,5 +301,129 @@ describe("CreateOrderUseCase", () => {
 
     // 39.9 * 2 = 79.8
     expect(order.total.getValue()).toBe(79.8);
+  });
+
+  // ==================== Frete recalculado no servidor (M1) ====================
+
+  it("deve recalcular o frete no servidor para entrega (ignora qualquer valor do cliente)", async () => {
+    const cart = {
+      id: "cart-1",
+      customerId: "customer-1",
+      items: [
+        {
+          id: "item-1",
+          productId: "p-1",
+          quantity: 2,
+          createdAt: new Date(),
+          product: {
+            id: "p-1",
+            name: "Ração",
+            price: 49.9,
+            promoPrice: null,
+            stock: 10,
+            isActive: true,
+            images: [],
+          },
+        },
+      ],
+    };
+
+    vi.mocked(mockAddressRepository.findById).mockResolvedValue(DELIVERY_ADDRESS as any);
+    vi.mocked(prisma.cart.findUnique).mockResolvedValue({
+      items: [{ productId: "p-1", quantity: 2 }],
+    } as any);
+    calculateShippingExecute.mockResolvedValue([
+      { serviceId: 1, serviceName: "PAC", company: "Correios", price: 25, deliveryDays: 5 },
+      { serviceId: 2, serviceName: "SEDEX", company: "Correios", price: 40, deliveryDays: 2 },
+    ]);
+
+    setupTransaction(cart, [{ id: "p-1", stock: 8 }]);
+
+    const order = await sut.execute({
+      customerId: "customer-1",
+      paymentMethod: PaymentMethod.PIX,
+      addressId: "addr-1",
+      shippingServiceId: 1,
+    });
+
+    expect(calculateShippingExecute).toHaveBeenCalledWith({
+      zipCode: "18000000",
+      items: [{ productId: "p-1", quantity: 2 }],
+    });
+    // subtotal 99.8 + frete recotado no servidor (25), nunca um valor vindo do cliente
+    expect(order.shippingCost?.getValue()).toBe(25);
+    expect(order.total.getValue()).toBe(124.8);
+  });
+
+  it("deve rejeitar quando o serviço de frete escolhido não existe na recotação", async () => {
+    vi.mocked(mockAddressRepository.findById).mockResolvedValue(DELIVERY_ADDRESS as any);
+    vi.mocked(prisma.cart.findUnique).mockResolvedValue({
+      items: [{ productId: "p-1", quantity: 1 }],
+    } as any);
+    calculateShippingExecute.mockResolvedValue([
+      { serviceId: 1, serviceName: "PAC", company: "Correios", price: 25, deliveryDays: 5 },
+    ]);
+
+    await expect(
+      sut.execute({
+        customerId: "customer-1",
+        paymentMethod: PaymentMethod.PIX,
+        addressId: "addr-1",
+        shippingServiceId: 999,
+      }),
+    ).rejects.toThrow("Opção de frete inválida ou indisponível");
+  });
+
+  it("deve propagar erro se a cotação de frete falhar (não cai pro valor do cliente)", async () => {
+    vi.mocked(mockAddressRepository.findById).mockResolvedValue(DELIVERY_ADDRESS as any);
+    vi.mocked(prisma.cart.findUnique).mockResolvedValue({
+      items: [{ productId: "p-1", quantity: 1 }],
+    } as any);
+    calculateShippingExecute.mockRejectedValue(new Error("Melhor Envio indisponível"));
+
+    await expect(
+      sut.execute({
+        customerId: "customer-1",
+        paymentMethod: PaymentMethod.PIX,
+        addressId: "addr-1",
+        shippingServiceId: 1,
+      }),
+    ).rejects.toThrow("Melhor Envio indisponível");
+  });
+
+  it("não cota frete e cobra zero na retirada na loja (pickup)", async () => {
+    const cart = {
+      id: "cart-1",
+      customerId: "customer-1",
+      items: [
+        {
+          id: "item-1",
+          productId: "p-1",
+          quantity: 1,
+          createdAt: new Date(),
+          product: {
+            id: "p-1",
+            name: "Ração",
+            price: 50,
+            promoPrice: null,
+            stock: 10,
+            isActive: true,
+            images: [],
+          },
+        },
+      ],
+    };
+
+    setupTransaction(cart, [{ id: "p-1", stock: 9 }]);
+
+    const order = await sut.execute({
+      customerId: "customer-1",
+      paymentMethod: PaymentMethod.PIX,
+      pickupLocation: "Loja Centro",
+    });
+
+    expect(calculateShippingExecute).not.toHaveBeenCalled();
+    expect(order.shippingCost?.getValue()).toBe(0);
+    expect(order.total.getValue()).toBe(50);
   });
 });

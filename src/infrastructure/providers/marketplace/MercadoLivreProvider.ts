@@ -25,11 +25,12 @@ export class MercadoLivreProvider implements IMarketplaceProvider {
     return process.env.ML_REDIRECT_URI || "";
   }
 
-  getAuthUrl(): string {
+  getAuthUrl(state: string): string {
     const params = new URLSearchParams({
       response_type: "code",
       client_id: this.appId,
       redirect_uri: this.redirectUri,
+      state,
     });
     return `${ML_AUTH_URL}?${params.toString()}`;
   }

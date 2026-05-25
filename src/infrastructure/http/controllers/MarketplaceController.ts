@@ -23,6 +23,10 @@ import { MarketplacePresenter } from "../presenters/MarketplacePresenter.js";
 import { MarketplacePlatform } from "../../../domain/enums/index.js";
 import { MercadoLivreProvider } from "../../providers/marketplace/MercadoLivreProvider.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import { randomBytes } from "crypto";
+import type { IOAuthStateRepository } from "../../../domain/repositories/IOAuthStateRepository.js";
+
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000; // 10 minutos
 
 function getProvider(platform: MarketplacePlatform) {
   switch (platform) {
@@ -48,11 +52,26 @@ export class MarketplaceController {
   ) {
     const platform = MarketplacePlatformParam.parse(request.params.platform);
     const provider = getProvider(platform);
-    return reply.send({ url: provider.getAuthUrl() });
+
+    // Gera um state aleatório, vincula ao admin que iniciou e persiste com expiração.
+    // O ML reflete esse state no callback, onde ele é validado (anti-CSRF/takeover).
+    const state = randomBytes(32).toString("hex");
+    const stateRepo = container.resolve<IOAuthStateRepository>("OAuthStateRepository");
+    await stateRepo.create({
+      state,
+      platform,
+      adminUserId: request.user.id,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    });
+
+    return reply.send({ url: provider.getAuthUrl(state) });
   }
 
   async oauthCallback(
-    request: FastifyRequest<{ Params: { platform: string }; Querystring: { code?: string } }>,
+    request: FastifyRequest<{
+      Params: { platform: string };
+      Querystring: { code?: string; state?: string };
+    }>,
     reply: FastifyReply,
   ) {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -68,6 +87,18 @@ export class MarketplaceController {
     if (!code) {
       return reply.redirect(
         `${frontendUrl}/admin/marketplace?error=missing_code&platform=${platform}`,
+      );
+    }
+
+    // Anti-CSRF: valida e consome (single-use) o state criado no início do fluxo.
+    // Sem isso, qualquer um com um `code` válido sobrescreveria a integração da loja.
+    const state = request.query.state || (request.body as any)?.state;
+    const stateRepo = container.resolve<IOAuthStateRepository>("OAuthStateRepository");
+    const record = state ? await stateRepo.consume(state) : null;
+    if (!record || record.platform !== platform || record.expiresAt < new Date()) {
+      request.log.warn({ platform, hasState: Boolean(state) }, "OAuth callback: state inválido");
+      return reply.redirect(
+        `${frontendUrl}/admin/marketplace?error=invalid_state&platform=${platform}`,
       );
     }
 

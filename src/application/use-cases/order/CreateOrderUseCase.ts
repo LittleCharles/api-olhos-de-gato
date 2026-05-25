@@ -1,15 +1,13 @@
 import { inject, injectable } from "tsyringe";
 import { randomUUID } from "crypto";
-import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { Order, OrderItemProps } from "../../../domain/entities/Order.js";
 import { Money } from "../../../domain/value-objects/Money.js";
 import { OrderStatus, PaymentStatus, PaymentMethod } from "../../../domain/enums/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { prisma } from "../../../infrastructure/database/prisma/client.js";
-import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IAddressRepository } from "../../../domain/repositories/IAddressRepository.js";
 import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
-import { buildOrderCreatedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
+import { CalculateShippingUseCase } from "../shipping/CalculateShippingUseCase.js";
 
 interface CreateOrderInput {
   customerId: string;
@@ -19,22 +17,19 @@ interface CreateOrderInput {
   addressId?: string;
   notes?: string;
   pickupLocation?: string;
-  shippingCost?: number;
-  shippingService?: string;
-  shippingDays?: number;
+  // O cliente só escolhe o serviço; o servidor recota o preço (anti-subfaturamento).
+  shippingServiceId?: number;
 }
 
 @injectable()
 export class CreateOrderUseCase {
   constructor(
-    @inject("MailProvider")
-    private mailProvider: IMailProvider,
-    @inject("StoreSettingsRepository")
-    private storeSettingsRepository: IStoreSettingsRepository,
     @inject("AddressRepository")
     private addressRepository: IAddressRepository,
     @inject("CustomerRepository")
     private customerRepository: ICustomerRepository,
+    @inject("CalculateShippingUseCase")
+    private calculateShipping: CalculateShippingUseCase,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
@@ -77,6 +72,13 @@ export class CreateOrderUseCase {
       city: string;
       state: string;
     } | null = null;
+
+    // Frete calculado no SERVIDOR (anti-subfaturamento). Pickup = 0; delivery = recotação
+    // do Melhor Envio pro serviço escolhido. Fora da transação (é chamada HTTP externa).
+    let serverShippingCost = Money.zero();
+    let serverShippingService: string | null = null;
+    let serverShippingDays: number | null = null;
+
     if (input.addressId) {
       const address = await this.addressRepository.findById(input.addressId);
       if (!address || address.customerId !== input.customerId) {
@@ -92,6 +94,30 @@ export class CreateOrderUseCase {
         city: address.city,
         state: address.state,
       };
+
+      // Itens do carrinho pra cotar (leitura leve; a transação relê de forma autoritativa).
+      const cartForShipping = await prisma.cart.findUnique({
+        where: { customerId: input.customerId },
+        select: { items: { select: { productId: true, quantity: true } } },
+      });
+      if (!cartForShipping || cartForShipping.items.length === 0) {
+        throw new AppError("Carrinho vazio", 400);
+      }
+
+      const options = await this.calculateShipping.execute({
+        zipCode: address.zipCode,
+        items: cartForShipping.items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        })),
+      });
+      const chosen = options.find((o) => o.serviceId === input.shippingServiceId);
+      if (!chosen) {
+        throw new AppError("Opção de frete inválida ou indisponível", 400);
+      }
+      serverShippingCost = Money.create(chosen.price);
+      serverShippingService = `${chosen.serviceName} (${chosen.company})`;
+      serverShippingDays = chosen.deliveryDays;
     }
 
     // All DB operations in a single transaction to guarantee atomicity
@@ -164,7 +190,7 @@ export class CreateOrderUseCase {
         }
 
         // 3. Calculate totals
-        const ship = input.shippingCost ? Money.create(input.shippingCost) : Money.zero();
+        const ship = serverShippingCost;
         const tot = sub.add(ship);
         const orderId = randomUUID();
 
@@ -182,8 +208,8 @@ export class CreateOrderUseCase {
             notes: input.notes ?? null,
             pickupLocation: input.pickupLocation ?? null,
             shippingCost: ship.getValue(),
-            shippingService: input.shippingService ?? null,
-            shippingDays: input.shippingDays ?? null,
+            shippingService: serverShippingService,
+            shippingDays: serverShippingDays,
             shippingRecipientName: shippingAddressSnapshot?.recipientName ?? null,
             shippingZipCode: shippingAddressSnapshot?.zipCode ?? null,
             shippingStreet: shippingAddressSnapshot?.street ?? null,
@@ -242,32 +268,6 @@ export class CreateOrderUseCase {
 
         return { createdOrder: orderEntity, orderItems: items, subtotal: sub, shippingCost: ship, total: tot };
       });
-
-    // Send order confirmation email OUTSIDE the transaction (non-blocking)
-    if (input.customerEmail) {
-      try {
-        const store = await this.storeSettingsRepository.get();
-        const email = buildOrderCreatedEmail(
-          createdOrder,
-          { name: input.customerName || "cliente", email: input.customerEmail },
-          {
-            name: store.storeName,
-            address: store.address,
-            email: store.email,
-            socialInstagram: store.socialInstagram || undefined,
-            socialFacebook: store.socialFacebook || undefined,
-            socialTiktok: store.socialTiktok || undefined,
-          },
-        );
-        await this.mailProvider.send({
-          to: input.customerEmail,
-          ...email,
-        });
-      } catch (err) {
-        // Email failure should not break the order flow
-        console.error("[CreateOrder] Falha ao enviar email de confirmacao:", err);
-      }
-    }
 
     return createdOrder;
   }
