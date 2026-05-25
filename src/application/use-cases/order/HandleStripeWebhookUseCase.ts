@@ -11,6 +11,9 @@ import { buildPaymentConfirmedEmail } from "../../../infrastructure/providers/ma
 interface HandleStripeEventInput {
   eventType: string;
   orderId: string;
+  // payment_status da sessão Stripe ("paid" | "unpaid" | "no_payment_required").
+  // No PIX, o checkout.session.completed chega como "unpaid" (QR gerado, ainda não pago).
+  paymentStatus?: string;
 }
 
 @injectable()
@@ -35,6 +38,16 @@ export class HandleStripeWebhookUseCase {
     switch (input.eventType) {
       case "checkout.session.completed":
       case "checkout.session.async_payment_succeeded": {
+        // PIX e outros métodos assíncronos: o "completed" chega ANTES do pagamento
+        // (payment_status "unpaid" — cliente só gerou o QR). Nesse caso aguardamos o
+        // "async_payment_succeeded". Cartão chega "paid" já no próprio "completed".
+        if (
+          input.eventType === "checkout.session.completed" &&
+          input.paymentStatus !== "paid"
+        ) {
+          return;
+        }
+
         // Idempotency: skip if already paid
         if (order.paymentStatus === PaymentStatus.PAID) return;
 

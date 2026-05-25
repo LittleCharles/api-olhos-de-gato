@@ -49,7 +49,8 @@ export class StripeService {
 
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded",
-      payment_method_types: ["card"],
+      // PIX + cartão. O PIX é assíncrono: confirma via checkout.session.async_payment_succeeded.
+      payment_method_types: ["card", "pix"],
       mode: "payment",
       line_items: lineItems,
       metadata: { orderId: input.orderId },

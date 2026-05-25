@@ -21,12 +21,19 @@ export class WebhookController {
         signature,
       );
 
-      const session = event.data.object as { metadata?: { orderId?: string } };
+      const session = event.data.object as {
+        metadata?: { orderId?: string };
+        payment_status?: string;
+      };
       const orderId = session.metadata?.orderId;
 
       if (orderId) {
         const handleWebhook = container.resolve(HandleStripeWebhookUseCase);
-        await handleWebhook.execute({ eventType: event.type, orderId });
+        await handleWebhook.execute({
+          eventType: event.type,
+          orderId,
+          paymentStatus: session.payment_status,
+        });
       }
 
       return reply.send({ received: true });
