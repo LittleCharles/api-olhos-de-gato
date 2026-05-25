@@ -1,8 +1,22 @@
 import Stripe from "stripe";
+import { AppError } from "../../shared/errors/AppError.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-02-25.clover",
-});
+let stripeClient: Stripe | null = null;
+
+// Lazy init: cria o cliente Stripe só no primeiro uso. Evita derrubar o boot
+// do servidor inteiro quando STRIPE_SECRET_KEY está ausente (o new Stripe("")
+// do SDK lança na hora). Em prod o env.ts já exige a chave; em dev a app sobe
+// e só o pagamento falha — com erro claro — em vez de crashar no import.
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const apiKey = process.env.STRIPE_SECRET_KEY;
+    if (!apiKey) {
+      throw new AppError("Pagamento indisponível: STRIPE_SECRET_KEY não configurada.", 503);
+    }
+    stripeClient = new Stripe(apiKey, { apiVersion: "2026-02-25.clover" });
+  }
+  return stripeClient;
+}
 
 interface CheckoutItem {
   name: string;
@@ -47,7 +61,7 @@ export class StripeService {
       });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       ui_mode: "embedded",
       // Métodos de pagamento dinâmicos: omitimos payment_method_types para a Stripe
       // exibir o que estiver ATIVADO no Dashboard (cartão hoje; PIX aparece sozinho
@@ -85,7 +99,7 @@ export class StripeService {
     if (!webhookSecret) {
       throw new Error("STRIPE_WEBHOOK_SECRET not configured");
     }
-    return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    return getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
   }
 }
 
