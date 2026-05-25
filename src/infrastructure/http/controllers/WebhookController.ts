@@ -1,45 +1,39 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { container } from "tsyringe";
-import { stripeService } from "../../services/StripeService.js";
-import { HandleStripeWebhookUseCase } from "../../../application/use-cases/order/HandleStripeWebhookUseCase.js";
+import { HandlePaymentWebhookUseCase } from "../../../application/use-cases/order/HandlePaymentWebhookUseCase.js";
+import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
 
 export class WebhookController {
-  async stripeWebhook(request: FastifyRequest, reply: FastifyReply) {
-    const signature = request.headers["stripe-signature"] as string;
-
-    if (!signature) {
-      return reply.status(400).send({ error: "Missing stripe-signature header" });
+  async abacatePayWebhook(request: FastifyRequest, reply: FastifyReply) {
+    // Validação: a AbacatePay chama a URL configurada com ?webhookSecret=<secret> (definido no painel).
+    const secret = (request.query as { webhookSecret?: string })?.webhookSecret;
+    const expected = process.env.ABACATEPAY_WEBHOOK_SECRET;
+    if (!expected || secret !== expected) {
+      return reply.status(401).send({ error: "Invalid webhook secret" });
     }
 
     try {
-      const body = request.rawBody;
-      if (!body) {
-        return reply.status(400).send({ error: "Missing raw body" });
-      }
-      const event = stripeService.constructWebhookEvent(
-        typeof body === "string" ? Buffer.from(body) : body as Buffer,
-        signature,
-      );
-
-      const session = event.data.object as {
-        metadata?: { orderId?: string };
-        payment_status?: string;
+      const body = request.body as {
+        event?: string;
+        data?: { billing?: { id?: string; status?: string } };
       };
-      const orderId = session.metadata?.orderId;
+      const event = body.event;
+      const billingId = body.data?.billing?.id;
 
-      if (orderId) {
-        const handleWebhook = container.resolve(HandleStripeWebhookUseCase);
-        await handleWebhook.execute({
-          eventType: event.type,
-          orderId,
-          paymentStatus: session.payment_status,
-        });
+      if (event && billingId) {
+        // Reconciliação: o billing.id foi salvo no pedido (paymentSessionId) na criação da cobrança.
+        const orderRepo = container.resolve<IOrderRepository>("OrderRepository");
+        const order = await orderRepo.findByPaymentSessionId(billingId);
+        if (order) {
+          const handleWebhook = container.resolve(HandlePaymentWebhookUseCase);
+          await handleWebhook.execute({ event, orderId: order.id });
+        }
       }
 
       return reply.send({ received: true });
     } catch (err) {
-      request.log.error(err, "Stripe webhook error");
-      return reply.status(400).send({ error: "Webhook signature verification failed" });
+      request.log.error(err, "AbacatePay webhook error");
+      return reply.status(400).send({ error: "Webhook processing failed" });
     }
   }
 }

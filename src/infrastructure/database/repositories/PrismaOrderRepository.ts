@@ -277,11 +277,31 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
-  async updateStripeSessionId(id: string, sessionId: string): Promise<void> {
+  async updatePaymentSessionId(id: string, sessionId: string): Promise<void> {
     await prisma.order.update({
       where: { id },
-      data: { stripeSessionId: sessionId },
+      data: { paymentSessionId: sessionId },
     });
+  }
+
+  async findByPaymentSessionId(sessionId: string): Promise<Order | null> {
+    const order = await prisma.order.findFirst({
+      where: { paymentSessionId: sessionId },
+      include: {
+        items: {
+          include: { product: { include: { images: { where: { isMain: true }, take: 1 } } } },
+        },
+        customer: {
+          include: { user: true },
+        },
+        history: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    if (!order) return null;
+    return this.mapToEntity(order);
   }
 
   private mapToEntity(data: any): Order {
