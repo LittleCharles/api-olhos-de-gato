@@ -49,8 +49,10 @@ export class StripeService {
 
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded",
-      // PIX + cartão. O PIX é assíncrono: confirma via checkout.session.async_payment_succeeded.
-      payment_method_types: ["card", "pix"],
+      // Métodos de pagamento dinâmicos: omitimos payment_method_types para a Stripe
+      // exibir o que estiver ATIVADO no Dashboard (cartão hoje; PIX aparece sozinho
+      // assim que for ativado, sem redeploy). Fixar um método não ativado quebra a
+      // criação da sessão. O PIX é assíncrono — confirma via async_payment_succeeded.
       mode: "payment",
       line_items: lineItems,
       metadata: { orderId: input.orderId },
