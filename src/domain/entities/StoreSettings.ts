@@ -14,6 +14,10 @@ export interface StoreSettingsProps {
   creditCardEnabled: boolean;
   creditCardMaxInstallments: number;
   boletoEnabled: boolean;
+  cardFeePercent: number;
+  cardFeeFixed: number;
+  pixFeePercent: number;
+  applyCardFeeToShipping: boolean;
   socialInstagram: string;
   socialFacebook: string;
   socialTiktok: string;
@@ -43,6 +47,10 @@ export class StoreSettings {
   get creditCardEnabled(): boolean { return this.props.creditCardEnabled; }
   get creditCardMaxInstallments(): number { return this.props.creditCardMaxInstallments; }
   get boletoEnabled(): boolean { return this.props.boletoEnabled; }
+  get cardFeePercent(): number { return this.props.cardFeePercent; }
+  get cardFeeFixed(): number { return this.props.cardFeeFixed; }
+  get pixFeePercent(): number { return this.props.pixFeePercent; }
+  get applyCardFeeToShipping(): boolean { return this.props.applyCardFeeToShipping; }
   get socialInstagram(): string { return this.props.socialInstagram; }
   get socialFacebook(): string { return this.props.socialFacebook; }
   get socialTiktok(): string { return this.props.socialTiktok; }
@@ -67,6 +75,10 @@ export class StoreSettings {
     if (data.creditCardEnabled !== undefined) this.props.creditCardEnabled = data.creditCardEnabled;
     if (data.creditCardMaxInstallments !== undefined) this.props.creditCardMaxInstallments = data.creditCardMaxInstallments;
     if (data.boletoEnabled !== undefined) this.props.boletoEnabled = data.boletoEnabled;
+    if (data.cardFeePercent !== undefined) this.props.cardFeePercent = data.cardFeePercent;
+    if (data.cardFeeFixed !== undefined) this.props.cardFeeFixed = data.cardFeeFixed;
+    if (data.pixFeePercent !== undefined) this.props.pixFeePercent = data.pixFeePercent;
+    if (data.applyCardFeeToShipping !== undefined) this.props.applyCardFeeToShipping = data.applyCardFeeToShipping;
     if (data.socialInstagram !== undefined) this.props.socialInstagram = data.socialInstagram;
     if (data.socialFacebook !== undefined) this.props.socialFacebook = data.socialFacebook;
     if (data.socialTiktok !== undefined) this.props.socialTiktok = data.socialTiktok;
