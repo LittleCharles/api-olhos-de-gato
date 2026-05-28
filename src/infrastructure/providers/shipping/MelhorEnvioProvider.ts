@@ -113,7 +113,14 @@ export class MelhorEnvioProvider implements IShippingProvider {
         throw new AppError("Nenhuma opção de frete disponível para este CEP", 400);
       }
 
-      return options;
+      // Mostra só as 3 opções principais, nesta ordem. Fallback: se nenhuma das
+      // 3 atender este CEP, devolve todas (pra não travar o checkout de ninguém).
+      const PREFERRED_SERVICES = ["SEDEX", "Jadlog Package", "Jadlog Expresso"];
+      const preferred = PREFERRED_SERVICES
+        .map((name) => options.find((o) => o.serviceName === name))
+        .filter((o): o is ShippingOption => o !== undefined);
+
+      return preferred.length > 0 ? preferred : options;
     } catch (err) {
       if (err instanceof AppError) throw err;
       console.error("MelhorEnvio fetch error:", err);

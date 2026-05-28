@@ -123,7 +123,7 @@ export function baseLayout({
                     <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                       <tr>
                         <td align="left" style="vertical-align:middle;">
-                          <img src="${encodeURI(logoUrl)}" alt="Olhos de Gato" height="40" style="height:40px; width:auto; max-width:220px; display:block; border:0; outline:none; text-decoration:none;" />
+                          <img src="${encodeURI(logoUrl)}" alt="Olhos de Gato" height="56" style="height:56px; width:auto; max-width:280px; display:block; border:0; outline:none; text-decoration:none;" />
                         </td>
                         <td align="right" style="vertical-align:middle;">
                           <a href="${encodeURI(helpUrl)}" style="color:#71717a; font-size:13px; text-decoration:none;">Central de Atendimento</a>
