@@ -6,7 +6,9 @@ services:
     container_name: olhosdegato-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      # 5433 no host: a 5432 é ocupada pelo PostgreSQL nativo do Windows (serviço),
+      # que sombrearia o container. DATABASE_URL local usa 127.0.0.1:5433.
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
