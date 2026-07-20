@@ -56,6 +56,9 @@ import { PrismaOAuthStateRepository } from "../../infrastructure/database/reposi
 import { IBrandRepository } from "../../domain/repositories/IBrandRepository.js";
 import { PrismaBrandRepository } from "../../infrastructure/database/repositories/PrismaBrandRepository.js";
 
+import { ICouponRepository } from "../../domain/repositories/ICouponRepository.js";
+import { PrismaCouponRepository } from "../../infrastructure/database/repositories/PrismaCouponRepository.js";
+
 // Providers
 import { IHashProvider } from "../../application/interfaces/IHashProvider.js";
 import { BcryptHashProvider } from "../../infrastructure/providers/hash/BcryptHashProvider.js";
@@ -146,6 +149,10 @@ container.registerSingleton<IBrandRepository>(
   "BrandRepository",
   PrismaBrandRepository,
 );
+container.registerSingleton<ICouponRepository>(
+  "CouponRepository",
+  PrismaCouponRepository,
+);
 
 // Register Providers
 container.registerSingleton<IHashProvider>("HashProvider", BcryptHashProvider);
@@ -161,5 +168,9 @@ container.registerSingleton("SendVerificationEmailUseCase", SendVerificationEmai
 
 import { CalculateShippingUseCase } from "../../application/use-cases/shipping/CalculateShippingUseCase.js";
 container.registerSingleton("CalculateShippingUseCase", CalculateShippingUseCase);
+
+// Injetado no CreateOrderUseCase e no ValidateCartCouponUseCase (por token)
+import { ValidateCouponUseCase } from "../../application/use-cases/coupon/ValidateCouponUseCase.js";
+container.registerSingleton("ValidateCouponUseCase", ValidateCouponUseCase);
 
 export { container };

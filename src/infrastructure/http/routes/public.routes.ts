@@ -10,6 +10,7 @@ import { AddressController } from "../controllers/AddressController.js";
 import { CartController } from "../controllers/CartController.js";
 import { FavoriteController } from "../controllers/FavoriteController.js";
 import { CustomerOrderController } from "../controllers/CustomerOrderController.js";
+import { CouponController } from "../controllers/CouponController.js";
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
 import { ShippingController } from "../controllers/ShippingController.js";
 import { webhookController } from "../controllers/WebhookController.js";
@@ -30,6 +31,7 @@ const addressController = new AddressController();
 const cartController = new CartController();
 const favoriteController = new FavoriteController();
 const customerOrderController = new CustomerOrderController();
+const couponController = new CouponController();
 const supportTicketController = new SupportTicketController();
 const shippingController = new ShippingController();
 
@@ -108,6 +110,17 @@ export async function publicRoutes(app: FastifyInstance) {
   app.get("/favorites", { preHandler: customerAuth }, favoriteController.list);
   app.post("/favorites", { preHandler: customerAuth }, favoriteController.add);
   app.delete("/favorites/:productId", { preHandler: customerAuth }, favoriteController.remove);
+
+  // Cupom: validação contra o carrinho do cliente. Rate limit dedicado — códigos
+  // são adivinháveis; sem isso o endpoint vira oráculo de brute-force (auditoria B5).
+  app.post(
+    "/coupons/validate",
+    {
+      preHandler: customerAuth,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    couponController.validate,
+  );
 
   // Orders
   app.post("/orders", { preHandler: customerAuth }, customerOrderController.create);

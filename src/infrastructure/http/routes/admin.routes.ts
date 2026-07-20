@@ -12,6 +12,7 @@ import { ProductImageController } from "../controllers/ProductImageController.js
 import { SupportTicketController } from "../controllers/SupportTicketController.js";
 import { MarketplaceController } from "../controllers/MarketplaceController.js";
 import { BrandController } from "../controllers/BrandController.js";
+import { CouponController } from "../controllers/CouponController.js";
 import { AdminUserController } from "../controllers/AdminUserController.js";
 import { MarketingController } from "../controllers/MarketingController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -30,6 +31,7 @@ const productImageController = new ProductImageController();
 const supportTicketController = new SupportTicketController();
 const marketplaceController = new MarketplaceController();
 const brandController = new BrandController();
+const couponController = new CouponController();
 const adminUserController = new AdminUserController();
 const marketingController = new MarketingController();
 
@@ -57,6 +59,12 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post("/brands", brandController.create);
   app.put("/brands/:id", brandController.update);
   app.delete("/brands/:id", brandController.delete);
+
+  // Coupons (4 endpoints)
+  app.get("/coupons", couponController.list);
+  app.post("/coupons", couponController.create);
+  app.put("/coupons/:id", couponController.update);
+  app.delete("/coupons/:id", couponController.delete);
 
   // Categories / Subcategories (4 endpoints)
   app.get("/categories", subcategoryController.list);
