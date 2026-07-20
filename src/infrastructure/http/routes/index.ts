@@ -2,9 +2,11 @@ import { FastifyInstance } from "fastify";
 import { publicRoutes } from "./public.routes.js";
 import { adminRoutes } from "./admin.routes.js";
 import { MarketplaceController } from "../controllers/MarketplaceController.js";
+import { FeedController } from "../controllers/FeedController.js";
 import { prisma } from "../../database/prisma/client.js";
 
 const marketplaceController = new MarketplaceController();
+const feedController = new FeedController();
 
 export async function routes(app: FastifyInstance) {
   app.register(publicRoutes, { prefix: "/api/v1/public" });
@@ -12,6 +14,9 @@ export async function routes(app: FastifyInstance) {
 
   // OAuth callback — must be public (ML redirects browser without JWT)
   app.get("/api/v1/admin/marketplace/accounts/:platform/callback", marketplaceController.oauthCallback);
+
+  // Feed de produtos Google Merchant (Shopping/PMax) — público, o Merchant busca a URL sozinho.
+  app.get("/feed/google-merchant.xml", feedController.googleMerchant);
 
   // Health check (valida conectividade com o banco)
   app.get("/health", async (_req, reply) => {

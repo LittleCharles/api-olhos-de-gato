@@ -13,6 +13,10 @@ const envSchema = z.object({
   ML_APP_ID: z.string().optional(),
   ML_CLIENT_SECRET: z.string().optional(),
   MELHOR_ENVIO_TOKEN: z.string().optional(),
+  // GA4 Measurement Protocol (purchase server-side via webhook Stripe). Opcionais:
+  // sem eles, o disparo server-side é simplesmente pulado (client-side continua medindo).
+  GA4_MEASUREMENT_ID: z.string().optional(),
+  GA4_API_SECRET: z.string().optional(),
   // nº de hops de proxy confiáveis (ou CIDR/IP). Default 1 (borda do Railway).
   TRUST_PROXY: z.string().optional(),
 });

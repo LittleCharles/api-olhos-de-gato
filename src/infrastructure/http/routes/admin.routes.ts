@@ -13,6 +13,7 @@ import { SupportTicketController } from "../controllers/SupportTicketController.
 import { MarketplaceController } from "../controllers/MarketplaceController.js";
 import { BrandController } from "../controllers/BrandController.js";
 import { AdminUserController } from "../controllers/AdminUserController.js";
+import { MarketingController } from "../controllers/MarketingController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { UserRole } from "../../../domain/enums/index.js";
 
@@ -30,6 +31,7 @@ const supportTicketController = new SupportTicketController();
 const marketplaceController = new MarketplaceController();
 const brandController = new BrandController();
 const adminUserController = new AdminUserController();
+const marketingController = new MarketingController();
 
 export async function adminRoutes(app: FastifyInstance) {
   // Protege todas as rotas admin
@@ -89,9 +91,12 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get("/highlights", highlightController.get);
   app.put("/highlights", highlightController.update);
 
-  // Settings (2 endpoints)
-  app.get("/settings", settingsController.get);
+  // Settings (2 endpoints) — getAdmin inclui campos admin-only (lookerStudioUrl)
+  app.get("/settings", settingsController.getAdmin);
   app.put("/settings", settingsController.update);
+
+  // Marketing / Tráfego (atribuição first-party: receita real x origem do pedido)
+  app.get("/marketing/attribution", marketingController.getAttribution);
 
   // Abandoned Carts (1 endpoint)
   app.get("/abandoned-carts", abandonedCartController.list);

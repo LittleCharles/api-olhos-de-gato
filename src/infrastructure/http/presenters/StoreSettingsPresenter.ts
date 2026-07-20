@@ -28,4 +28,12 @@ export class StoreSettingsPresenter {
       updatedAt: settings.updatedAt.toISOString(),
     };
   }
+
+  // Versão admin: inclui campos sensíveis/internos que NÃO devem ir pro /public/settings.
+  static toHTTPAdmin(settings: StoreSettings) {
+    return {
+      ...StoreSettingsPresenter.toHTTP(settings),
+      lookerStudioUrl: settings.lookerStudioUrl || "",
+    };
+  }
 }

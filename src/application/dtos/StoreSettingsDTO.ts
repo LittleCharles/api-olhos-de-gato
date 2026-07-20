@@ -23,6 +23,7 @@ export const UpdateStoreSettingsSchema = z.object({
   socialMercadoLivre: z.string().url().or(z.literal("")).optional(),
   socialShopee: z.string().url().or(z.literal("")).optional(),
   socialAmazon: z.string().url().or(z.literal("")).optional(),
+  lookerStudioUrl: z.string().url().or(z.literal("")).optional(),
 });
 
 export type UpdateStoreSettingsDTO = z.infer<typeof UpdateStoreSettingsSchema>;

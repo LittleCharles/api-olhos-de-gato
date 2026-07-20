@@ -35,6 +35,7 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
           socialMercadoLivre: "",
           socialShopee: "",
           socialAmazon: "",
+          lookerStudioUrl: "",
         },
       });
     }
@@ -68,6 +69,7 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
         socialMercadoLivre: settings.socialMercadoLivre,
         socialShopee: settings.socialShopee,
         socialAmazon: settings.socialAmazon,
+        lookerStudioUrl: settings.lookerStudioUrl,
       },
     });
 
@@ -99,6 +101,7 @@ export class PrismaStoreSettingsRepository implements IStoreSettingsRepository {
       socialMercadoLivre: data.socialMercadoLivre,
       socialShopee: data.socialShopee,
       socialAmazon: data.socialAmazon,
+      lookerStudioUrl: data.lookerStudioUrl ?? "",
       updatedAt: data.updatedAt,
     });
   }
