@@ -2,6 +2,7 @@ import { inject, injectable } from "tsyringe";
 import type { IOrderRepository } from "../../../domain/repositories/IOrderRepository.js";
 import type { IProductRepository } from "../../../domain/repositories/IProductRepository.js";
 import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
+import type { ICouponRepository } from "../../../domain/repositories/ICouponRepository.js";
 import type { IStoreSettingsRepository } from "../../../domain/repositories/IStoreSettingsRepository.js";
 import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { Order } from "../../../domain/entities/Order.js";
@@ -22,6 +23,8 @@ export class UpdateOrderStatusUseCase {
     private productRepository: IProductRepository,
     @inject("CustomerRepository")
     private customerRepository: ICustomerRepository,
+    @inject("CouponRepository")
+    private couponRepository: ICouponRepository,
     @inject("StoreSettingsRepository")
     private storeSettingsRepository: IStoreSettingsRepository,
     @inject("MailProvider")
@@ -63,6 +66,10 @@ export class UpdateOrderStatusUseCase {
     if (status === OrderStatus.CANCELLED && wasCancellable) {
       for (const item of order.items) {
         await this.productRepository.updateStock(item.productId, item.quantity);
+      }
+      // Devolve o uso do cupom (mesma lógica da restauração de estoque)
+      if (order.couponId) {
+        await this.couponRepository.releaseUsage(order.couponId);
       }
     }
 

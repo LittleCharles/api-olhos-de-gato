@@ -45,6 +45,14 @@ export class CustomerOrderController {
       notes: data.notes,
       pickupLocation: data.pickupLocation,
       shippingServiceId: data.shippingServiceId,
+      couponCode: data.couponCode,
+      utmSource: data.utmSource,
+      utmMedium: data.utmMedium,
+      utmCampaign: data.utmCampaign,
+      utmContent: data.utmContent,
+      utmTerm: data.utmTerm,
+      gclid: data.gclid,
+      gaClientId: data.gaClientId,
     });
 
     const checkoutItems = order.items.map((item) => ({
@@ -63,10 +71,19 @@ export class CustomerOrderController {
       });
     }
 
+    // Desconto do cupom já persistido na Order — no Stripe vira cupom ad-hoc amount_off
+    const discountCents = Math.round(order.discount.getValue() * 100);
+
     const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
       items: checkoutItems,
       customerEmail: user?.email?.getValue(),
+      ...(discountCents > 0
+        ? {
+            discountCents,
+            discountName: order.couponCode ? `Cupom ${order.couponCode}` : "Desconto",
+          }
+        : {}),
     });
 
     // Save stripe session id on order
@@ -136,10 +153,20 @@ export class CustomerOrderController {
       });
     }
 
+    // Retry NÃO revalida o cupom: o pedido já é dono do desconto e do uso contado —
+    // a nova sessão só re-renderiza o que está persistido na Order.
+    const discountCents = Math.round(order.discount.getValue() * 100);
+
     const { sessionId, clientSecret } = await stripeService.createCheckoutSession({
       orderId: order.id,
       items: checkoutItems,
       customerEmail: user?.email?.getValue(),
+      ...(discountCents > 0
+        ? {
+            discountCents,
+            discountName: order.couponCode ? `Cupom ${order.couponCode}` : "Desconto",
+          }
+        : {}),
     });
 
     // Sobrescreve o sessionId antigo — a session anterior fica órfã na Stripe e expira sozinha

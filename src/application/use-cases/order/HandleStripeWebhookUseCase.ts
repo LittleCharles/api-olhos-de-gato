@@ -7,6 +7,7 @@ import type { IMailProvider } from "../../interfaces/IMailProvider.js";
 import { OrderStatus, PaymentStatus } from "../../../domain/enums/index.js";
 import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import { buildPaymentConfirmedEmail } from "../../../infrastructure/providers/mail/templates/orderEmails.js";
+import { sendGa4Purchase } from "../../../infrastructure/providers/analytics/Ga4MeasurementProtocol.js";
 
 interface HandleStripeEventInput {
   eventType: string;
@@ -82,6 +83,30 @@ export class HandleStripeWebhookUseCase {
         } catch (err) {
           console.error("[Stripe] Falha ao enviar email de pagamento confirmado:", err);
         }
+
+        // Best-effort: purchase server-side pro GA4 (Measurement Protocol). Fonte de verdade
+        // confiável; deduplicado pelo transaction_id com o evento client-side. Usa o client_id
+        // real capturado no checkout (gaClientId) — no-op se ausente (sem consentimento de analytics).
+        try {
+          const attribution = await prisma.order.findUnique({
+            where: { id: order.id },
+            select: { gaClientId: true },
+          });
+          await sendGa4Purchase({
+            clientId: attribution?.gaClientId,
+            transactionId: order.id,
+            value: order.total.getValue(),
+            currency: "BRL",
+            items: order.items.map((item) => ({
+              itemId: item.productId,
+              itemName: item.productName,
+              quantity: item.quantity,
+              price: item.unitPrice.getValue(),
+            })),
+          });
+        } catch (err) {
+          console.error("[GA4] Falha ao enviar purchase server-side:", err);
+        }
         break;
       }
 
@@ -109,6 +134,16 @@ export class HandleStripeWebhookUseCase {
             await tx.product.update({
               where: { id: item.productId },
               data: { stock: { increment: item.quantity } },
+            });
+          }
+
+          // Devolve o uso do cupom (espelha a restauração de estoque) — evita queimar
+          // vaga de cupom limitado em checkout abandonado. Guard usedCount > 0 = piso 0;
+          // idempotência garantida pelo check paymentStatus === FAILED acima.
+          if (order.couponId) {
+            await tx.coupon.updateMany({
+              where: { id: order.couponId, usedCount: { gt: 0 } },
+              data: { usedCount: { decrement: 1 } },
             });
           }
 

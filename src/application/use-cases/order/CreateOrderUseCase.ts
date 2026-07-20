@@ -8,6 +8,7 @@ import { prisma } from "../../../infrastructure/database/prisma/client.js";
 import type { IAddressRepository } from "../../../domain/repositories/IAddressRepository.js";
 import type { ICustomerRepository } from "../../../domain/repositories/ICustomerRepository.js";
 import { CalculateShippingUseCase } from "../shipping/CalculateShippingUseCase.js";
+import { ValidateCouponUseCase } from "../coupon/ValidateCouponUseCase.js";
 
 interface CreateOrderInput {
   customerId: string;
@@ -19,6 +20,16 @@ interface CreateOrderInput {
   pickupLocation?: string;
   // O cliente só escolhe o serviço; o servidor recota o preço (anti-subfaturamento).
   shippingServiceId?: number;
+  // Cupom: só o código; desconto validado e calculado no servidor dentro da transação.
+  couponCode?: string;
+  // Atribuição de marketing (UTM/gclid) — capturada no 1º acesso, persistida no pedido.
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  gclid?: string;
+  gaClientId?: string;
 }
 
 @injectable()
@@ -30,6 +41,8 @@ export class CreateOrderUseCase {
     private customerRepository: ICustomerRepository,
     @inject("CalculateShippingUseCase")
     private calculateShipping: CalculateShippingUseCase,
+    @inject("ValidateCouponUseCase")
+    private validateCoupon: ValidateCouponUseCase,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Order> {
@@ -189,12 +202,46 @@ export class CreateOrderUseCase {
           sub = sub.add(itemTotal);
         }
 
-        // 3. Calculate totals
+        // 3. Cupom (opcional): validação + cálculo server-side sobre o subtotal dos
+        // PRODUTOS (frete integral). O incremento condicional de usedCount é o guard
+        // de concorrência do limite — se outro pedido consumir a última vaga entre a
+        // validação e o UPDATE, count === 0 e a transação inteira reverte (estoque incluso).
+        let discount = Money.zero();
+        let couponId: string | null = null;
+        let couponCode: string | null = null;
+
+        if (input.couponCode) {
+          const { coupon, discount: couponDiscount } = await this.validateCoupon.execute({
+            code: input.couponCode,
+            subtotal: sub,
+          });
+
+          if (coupon.usageLimit != null) {
+            const consumed = await tx.coupon.updateMany({
+              where: { id: coupon.id, usedCount: { lt: coupon.usageLimit } },
+              data: { usedCount: { increment: 1 } },
+            });
+            if (consumed.count === 0) {
+              throw new AppError("Cupom esgotado", 400);
+            }
+          } else {
+            await tx.coupon.update({
+              where: { id: coupon.id },
+              data: { usedCount: { increment: 1 } },
+            });
+          }
+
+          discount = couponDiscount;
+          couponId = coupon.id;
+          couponCode = coupon.code;
+        }
+
+        // 4. Calculate totals
         const ship = serverShippingCost;
-        const tot = sub.add(ship);
+        const tot = sub.subtract(discount).add(ship);
         const orderId = randomUUID();
 
-        // 4. Create order with items
+        // 5. Create order with items
         const created = await tx.order.create({
           data: {
             id: orderId,
@@ -203,7 +250,9 @@ export class CreateOrderUseCase {
             paymentStatus: PaymentStatus.PENDING,
             paymentMethod: input.paymentMethod,
             subtotal: sub.getValue(),
-            discount: 0,
+            discount: discount.getValue(),
+            couponId,
+            couponCode,
             total: tot.getValue(),
             notes: input.notes ?? null,
             pickupLocation: input.pickupLocation ?? null,
@@ -218,6 +267,13 @@ export class CreateOrderUseCase {
             shippingNeighborhood: shippingAddressSnapshot?.neighborhood ?? null,
             shippingCity: shippingAddressSnapshot?.city ?? null,
             shippingState: shippingAddressSnapshot?.state ?? null,
+            utmSource: input.utmSource ?? null,
+            utmMedium: input.utmMedium ?? null,
+            utmCampaign: input.utmCampaign ?? null,
+            utmContent: input.utmContent ?? null,
+            utmTerm: input.utmTerm ?? null,
+            gclid: input.gclid ?? null,
+            gaClientId: input.gaClientId ?? null,
             items: {
               create: items.map((item) => ({
                 id: item.id,
@@ -237,7 +293,7 @@ export class CreateOrderUseCase {
           },
         });
 
-        // 5. Clear cart
+        // 6. Clear cart
         await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
 
         // Map to domain entity
@@ -249,7 +305,9 @@ export class CreateOrderUseCase {
           paymentStatus: created.paymentStatus as PaymentStatus,
           paymentMethod: created.paymentMethod as PaymentMethod,
           subtotal: sub,
-          discount: Money.zero(),
+          discount,
+          couponId,
+          couponCode,
           total: tot,
           notes: created.notes,
           trackingCode: created.trackingCode,

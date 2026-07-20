@@ -10,6 +10,18 @@ export const CustomerCreateOrderSchema = z
     // Frete: o cliente só indica QUAL serviço escolheu; o preço é recotado no servidor
     // (Melhor Envio) a partir do endereço + carrinho. Não confiamos em valor vindo do cliente.
     shippingServiceId: z.number().int().positive().optional(),
+    // Cupom: o cliente só manda o CÓDIGO; validação e cálculo do desconto são
+    // feitos no servidor dentro da transação (mesma regra do frete).
+    couponCode: z.string().trim().min(1).max(30).optional(),
+    // Atribuição de marketing (capturada no 1º acesso, enviada pelo cliente). Apenas dado
+    // analítico — não influencia preço/estoque, então é seguro aceitar do cliente.
+    utmSource: z.string().max(255).optional(),
+    utmMedium: z.string().max(255).optional(),
+    utmCampaign: z.string().max(255).optional(),
+    utmContent: z.string().max(255).optional(),
+    utmTerm: z.string().max(255).optional(),
+    gclid: z.string().max(512).optional(),
+    gaClientId: z.string().max(255).optional(),
   })
   .refine(
     (data) => Boolean(data.addressId) !== Boolean(data.pickupLocation),

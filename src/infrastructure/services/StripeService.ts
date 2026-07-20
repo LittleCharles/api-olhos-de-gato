@@ -30,6 +30,11 @@ interface CreateCheckoutSessionInput {
   items: CheckoutItem[];
   shippingCents?: number;
   customerEmail?: string;
+  // Desconto (cupom) JÁ calculado e persistido na Order (provider-agnostic).
+  // Aqui só renderizamos: cupom Stripe ad-hoc amount_off — nunca percent_off,
+  // que também descontaria o line item "Frete" (frete é sempre integral).
+  discountCents?: number;
+  discountName?: string;
 }
 
 export class StripeService {
@@ -61,6 +66,20 @@ export class StripeService {
       });
     }
 
+    // Cupom ad-hoc de uso único com o valor EXATO persistido na Order — o cobrado
+    // bate com order.total sem drift de arredondamento, e a UI embedded mostra a
+    // linha de desconto mantendo a itemização dos produtos.
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
+    if (input.discountCents && input.discountCents > 0) {
+      const coupon = await getStripe().coupons.create({
+        amount_off: input.discountCents,
+        currency: "brl",
+        duration: "once",
+        name: input.discountName ?? "Desconto",
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
     const session = await getStripe().checkout.sessions.create({
       ui_mode: "embedded",
       // Métodos de pagamento dinâmicos: omitimos payment_method_types para a Stripe
@@ -69,6 +88,7 @@ export class StripeService {
       // criação da sessão. O PIX é assíncrono — confirma via async_payment_succeeded.
       mode: "payment",
       line_items: lineItems,
+      ...(discounts ? { discounts } : {}),
       metadata: { orderId: input.orderId },
       ...(input.customerEmail
         ? { customer_email: input.customerEmail }

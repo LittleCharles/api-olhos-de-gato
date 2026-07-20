@@ -31,6 +31,8 @@ export interface OrderProps {
   paymentMethod: PaymentMethod;
   subtotal: Money;
   discount: Money;
+  couponId?: string | null;
+  couponCode?: string | null;
   total: Money;
   notes?: string | null;
   trackingCode?: string | null;
@@ -81,6 +83,14 @@ export class Order {
 
   get discount(): Money {
     return this.props.discount;
+  }
+
+  get couponId(): string | null | undefined {
+    return this.props.couponId;
+  }
+
+  get couponCode(): string | null | undefined {
+    return this.props.couponCode;
   }
 
   get total(): Money {

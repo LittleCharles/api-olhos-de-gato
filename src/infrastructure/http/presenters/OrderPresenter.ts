@@ -13,6 +13,7 @@ export class OrderPresenter {
       subtotalFormatted: order.subtotal.format(),
       discount: order.discount.getValue(),
       discountFormatted: order.discount.format(),
+      couponCode: order.couponCode ?? null,
       total: order.total.getValue(),
       totalFormatted: order.total.format(),
       notes: order.notes,
